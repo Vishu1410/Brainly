@@ -2,16 +2,35 @@ import express from "express"
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
-import { JWT_SECRATE } from "./config";
 import { UserModel , ContentModel,TagsModel,LinkModel } from "./DB";
 import { middleware } from "./middleware";
 import { random } from "./utlis";
 import cors from "cors"
+import dotenv from "dotenv"
+import { v2 as cloudinary } from "cloudinary";
+import { uploads } from "./multermiddleware/multermiddleware";
+import connectToMongo from "./db/connectToMongo";
 
+
+dotenv.config()
 const app = express();
 
 app.use(express.json());
 app.use(cors())
+
+
+
+const PORT = process.env.PORT || 3000
+const JWT_SECRATE = process.env.JWT_SECRATE!;
+
+cloudinary.config({
+    cloud_name:process.env.cloud_name,
+    api_key: process.env.api_key,
+    api_secret: process.env.api_secret,
+  });
+
+
+
 
 app.post("/api/v1/signup",async (req,res)=>{
     try{    
@@ -62,24 +81,54 @@ app.post("/api/v1/login",async (req,res)=>{
     }
 })
 
-app.post("/api/v1/content",middleware,async(req,res)=>{
+app.post("/api/v1/content",middleware,uploads,async(req,res)=>{
     try{
-        const link = req.body.link;
-        const type = req.body.type;
-        const title = req.body.title;
+        
+        const file = req.file as Express.Multer.File;
+        console.log("i am inside post request");
+        console.log(file);
+        const {title,description,type,link} = req.body;
+        
+
+        let fileurl = null;
+        let resourceType: "auto" | "raw";
+
+        if(file){
+
+            if (file.mimetype === "application/pdf" || file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+                resourceType = "raw";
+              } else{
+                resourceType = "auto"
+              }
+              
+              const result = await cloudinary.uploader.upload(file.path, {
+                folder : "upload-doc",
+                resource_type: resourceType,
+              });
+              fileurl = result.secure_url
+              console.log(fileurl)
+            
+        }
+
+        
+
         await ContentModel.create({
-            link : link,
-            type : type,
-            title : title,
-            tags : [],
+            title,
+            description,
+            type,
+            fileurl : fileurl || null,
+            link : link || null,
             //@ts-ignore
             userId : req.userId
         })
-        res.send({
+
+        res.status(201).send({
             "message" : "content added..."
         })
+
     } catch(e){
-        res.send({
+        console.error("something wrong", e);
+        res.status(500).send({
             "error" : e 
         })
     }
@@ -178,9 +227,7 @@ app.get("/api/v1/brain/:sharelink",async(req,res)=>{
 })
 
 
-async function main(){
-    await mongoose.connect("mongodb+srv://vishupathariya146:feAVWFbOQDkM9yUJ@cluster0.mfblv.mongodb.net/SecondBrain");
-    app.listen(3000);
-    console.log("i am listening...")
-}
-main()
+app.listen(PORT,()=>{
+    connectToMongo()
+    console.log(`i am listening...at port ${PORT}`)
+})

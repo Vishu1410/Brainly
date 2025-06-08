@@ -13,7 +13,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const mongoose_1 = __importDefault(require("mongoose"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("./config");
@@ -21,9 +20,23 @@ const DB_1 = require("./DB");
 const middleware_1 = require("./middleware");
 const utlis_1 = require("./utlis");
 const cors_1 = __importDefault(require("cors"));
+const dotenv_1 = __importDefault(require("dotenv"));
+const cloudinary_1 = require("cloudinary");
+const multermiddleware_1 = require("./multermiddleware/multermiddleware");
+const connectToMongo_1 = __importDefault(require("./db/connectToMongo"));
+dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)());
+const PORT = process.env.PORT || 3000;
+cloudinary_1.v2.config({
+    cloud_name: process.env.cloud_name,
+    api_key: process.env.api_key,
+    api_secret: process.env.api_secret,
+});
+console.log("INSIDE INDEX mongo url : ", process.env.mongo_db_url);
+console.log("printing cloude-name : ", process.env.cloud_name);
+console.log("jwt secrate : ", process.env.JWT_SECRATE);
 app.post("/api/v1/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const username = req.body.username;
@@ -70,25 +83,44 @@ app.post("/api/v1/login", (req, res) => __awaiter(void 0, void 0, void 0, functi
         });
     }
 }));
-app.post("/api/v1/content", middleware_1.middleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post("/api/v1/content", middleware_1.middleware, multermiddleware_1.uploads, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const link = req.body.link;
-        const type = req.body.type;
-        const title = req.body.title;
+        const file = req.file;
+        console.log("i am inside post request");
+        console.log(file);
+        const { title, description, type, link } = req.body;
+        let fileurl = null;
+        let resourceType;
+        if (file) {
+            if (file.mimetype === "application/pdf" || file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+                resourceType = "raw";
+            }
+            else {
+                resourceType = "auto";
+            }
+            const result = yield cloudinary_1.v2.uploader.upload(file.path, {
+                folder: "upload-doc",
+                resource_type: resourceType,
+            });
+            fileurl = result.secure_url;
+            console.log(fileurl);
+        }
         yield DB_1.ContentModel.create({
-            link: link,
-            type: type,
-            title: title,
-            tags: [],
+            title,
+            description,
+            type,
+            fileurl: fileurl || null,
+            link: link || null,
             //@ts-ignore
             userId: req.userId
         });
-        res.send({
+        res.status(201).send({
             "message": "content added..."
         });
     }
     catch (e) {
-        res.send({
+        console.error("something wrong", e);
+        res.status(500).send({
             "error": e
         });
     }
@@ -170,11 +202,7 @@ app.get("/api/v1/brain/:sharelink", (req, res) => __awaiter(void 0, void 0, void
         content: content
     });
 }));
-function main() {
-    return __awaiter(this, void 0, void 0, function* () {
-        yield mongoose_1.default.connect("mongodb+srv://vishupathariya146:feAVWFbOQDkM9yUJ@cluster0.mfblv.mongodb.net/SecondBrain");
-        app.listen(3000);
-        console.log("i am listening...");
-    });
-}
-main();
+app.listen(PORT, () => {
+    (0, connectToMongo_1.default)();
+    console.log(`i am listening...at port ${PORT}`);
+});

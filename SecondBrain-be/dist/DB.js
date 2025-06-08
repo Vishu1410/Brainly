@@ -41,10 +41,13 @@ const user = new Schema({
     password: String
 });
 const content = new Schema({
-    link: { type: String, required: true },
-    type: { type: String, required: true },
     title: { type: String, required: true },
+    description: { type: String },
+    link: { type: String },
+    type: { type: String, enum: ['text', 'youtube', 'twitter', 'image', 'video', 'file'] },
+    fileurl: String,
     tags: [{ type: mongoose_1.default.Types.ObjectId, ref: 'Tags' }],
+    createdAt: { type: Date, default: Date.now() },
     userId: { type: mongoose_1.default.Types.ObjectId, ref: 'UserModel', required: true },
 });
 const tags = new Schema({

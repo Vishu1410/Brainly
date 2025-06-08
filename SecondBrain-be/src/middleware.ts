@@ -1,9 +1,10 @@
 import { NextFunction,Request,Response } from "express";
 import  jwt from "jsonwebtoken"
-import { JWT_SECRATE } from "./config";
+
 
 
 export const middleware = (req : Request,res : Response,next : NextFunction)=>{
+    const JWT_SECRATE = process.env.JWT_SECRATE;
     const token = req.headers["authorization"];
     //@ts-ignore
     const verifyToken = jwt.verify(token,JWT_SECRATE);

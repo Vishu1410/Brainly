@@ -12,12 +12,17 @@ const user = new Schema({
 
 
 const content = new Schema({
-    link: { type: String, required: true },
-    type: { type: String, required: true },
     title: { type: String, required: true },
+    description : {type : String},
+    link : {type : String},
+    type : {type : String,enum : ['text','youtube','twitter','image','video','file']},
+    fileurl : String,
     tags: [{ type: mongoose.Types.ObjectId, ref: 'Tags' }],
+    createdAt : {type : Date ,default : Date.now()},
     userId: { type: mongoose.Types.ObjectId, ref: 'UserModel', required: true },
 })
+
+
 
 const tags = new Schema({
     title : {type : String, require:true}

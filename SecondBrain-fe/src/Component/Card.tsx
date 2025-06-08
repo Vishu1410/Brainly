@@ -6,7 +6,9 @@ import { XIcon } from "../Icons/XIcon";
 import { YoutubeIcon } from "../Icons/YoutubeIcon";
 
 import { confirmToast } from "../utils/confirmToast";
-import { ShareMenu } from "./ShareMenu";
+// import { ShareMenu } from "./ShareMenu";
+import { FaFilePdf } from "react-icons/fa"; // Font Awesome PDF icon
+
 
 
 
@@ -14,15 +16,34 @@ interface CardInterface{
     id : string,
     title : string,
     link : string,
-    type : "youtube" | "twitter",
+    type : "youtube" | "twitter" | "image" | "file",
     onShareClick: (data: { title: string; link: string }) => void;
     onDelete : (id : string) => void
+    fileurl : string
+    description ?: string
 }
 
-export function Card({id,title,link,type,onShareClick,onDelete} : CardInterface){
+export function Card({id,title,link,type,onShareClick,onDelete,fileurl,description} : CardInterface){
 
+  console.log(fileurl)
+     
+        const downloadFile = () => {
+          fetch(fileurl)
+            .then(res => res.blob())
+            .then(blob => {
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'file.pdf';  // suggested file name
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              window.URL.revokeObjectURL(url);
+            });
+        };
+      
 
-
+  
     
     const getYoutubeEmbedLink = (url: string): string => {
         try {
@@ -91,6 +112,28 @@ export function Card({id,title,link,type,onShareClick,onDelete} : CardInterface)
                   </div>
               </div>
              <div className=" overflow-auto  rounded-md border-red-900 flex items-center justify-center ">
+                 { type === "image"  && (
+                    <div className="gap-4">
+                      <img src={fileurl} alt="" />
+                      <div className="h-20 mt-2 w-full border border-red-900 p-2 rounded-md ">
+                        {description}
+                      </div>
+                    </div>)
+                 }
+
+                 { type === "file"  && (
+                    <div className="gap-4">
+                       <FaFilePdf
+                        size={100}
+                        color="red"
+                        style={{cursor : "pointer"}}
+                        onClick={downloadFile}
+                      />
+                      <div className="h-20 mt-2 w-full border border-red-900 p-2 rounded-md ">
+                        {description}
+                      </div>
+                    </div>)
+                 }
                  { type === "youtube" && (
                     <div className="gap-4">
                       <iframe className="w-full flex items-center mt-4 " src={getYoutubeEmbedLink(link)} title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>

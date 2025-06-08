@@ -19,13 +19,14 @@ export default function Dashboard() {
 
   const [shareOpen, setShareOpen] = useState(false);
   const [shareData, setShareData] = useState<{ title: string; link: string } | null>(null);
+  console.log(contentArray);
 
   const onShareClick = (data: { title: string; link: string }) => {
     setShareData(data);
     setShareOpen(true);
   };
   
-    console.log(contentArray)
+    
 
     
 
@@ -65,7 +66,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full mt-2  border-red-500">
 
         { contentArray.map((item : any)=>(
-          <Card id={item._id} key = {item._id} onShareClick={onShareClick}  title={item.title} type={item.type} link= {item.link} onDelete={()=>deleteContent(item._id)} />
+          <Card id={item._id} key = {item._id} onShareClick={onShareClick}  title={item.title} type={item.type} link= {item.link} onDelete={()=>deleteContent(item._id)} fileurl={item.fileurl} description={item.description} />
         ))}
         
 
