@@ -85,8 +85,6 @@ app.post("/api/v1/content",middleware,uploads,async(req,res)=>{
     try{
         
         const file = req.file as Express.Multer.File;
-        console.log("i am inside post request");
-        console.log(file);
         const {title,description,type,link} = req.body;
         
 
@@ -106,7 +104,7 @@ app.post("/api/v1/content",middleware,uploads,async(req,res)=>{
                 resource_type: resourceType,
               });
               fileurl = result.secure_url
-              console.log(fileurl)
+              
             
         }
 

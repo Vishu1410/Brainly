@@ -3,10 +3,11 @@ import { Button } from "../Component/Button";
 import { Card } from "../Component/Card";
 import { PlusIcon } from "../Icons/PlusIcon";
 import { ShareIcon } from "../Icons/ShareIcon";
-import { CreateContentModel } from "../Component/CreateContentModel";
+// import { CreateContentModel } from "../Component/CreateContentModel";
 import { SideBar } from "../Component/SideBar";
 import usegetContent from "../hooks/usegetContent";
 import { ShareMenu } from "../Component/ShareMenu";
+import InputCard from "../Component/InputCard";
 
 
 
@@ -40,9 +41,10 @@ export default function Dashboard() {
 
     <div className="p-2 ml-72 min-h-screen bg-gray-100 border-2">
 
-      <CreateContentModel open={ModelOpen} close={()=>{
+      {/* <CreateContentModel open={ModelOpen} close={()=>{
         setModelOpen(false)
-      }}/>
+      }}/> */}
+      {ModelOpen && <InputCard onClose={() => setModelOpen(false)} />}
       
       {shareOpen && shareData && (
           <ShareMenu

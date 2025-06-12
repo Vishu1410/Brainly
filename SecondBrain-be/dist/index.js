@@ -15,7 +15,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const config_1 = require("./config");
 const DB_1 = require("./DB");
 const middleware_1 = require("./middleware");
 const utlis_1 = require("./utlis");
@@ -29,14 +28,12 @@ const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use((0, cors_1.default)());
 const PORT = process.env.PORT || 3000;
+const JWT_SECRATE = process.env.JWT_SECRATE;
 cloudinary_1.v2.config({
     cloud_name: process.env.cloud_name,
     api_key: process.env.api_key,
     api_secret: process.env.api_secret,
 });
-console.log("INSIDE INDEX mongo url : ", process.env.mongo_db_url);
-console.log("printing cloude-name : ", process.env.cloud_name);
-console.log("jwt secrate : ", process.env.JWT_SECRATE);
 app.post("/api/v1/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const username = req.body.username;
@@ -68,7 +65,7 @@ app.post("/api/v1/login", (req, res) => __awaiter(void 0, void 0, void 0, functi
         if (verifyUser && matchPassword) {
             const token = jsonwebtoken_1.default.sign({
                 id: verifyUser._id
-            }, config_1.JWT_SECRATE);
+            }, JWT_SECRATE);
             res.send({
                 Authorization: token
             });
@@ -86,8 +83,6 @@ app.post("/api/v1/login", (req, res) => __awaiter(void 0, void 0, void 0, functi
 app.post("/api/v1/content", middleware_1.middleware, multermiddleware_1.uploads, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const file = req.file;
-        console.log("i am inside post request");
-        console.log(file);
         const { title, description, type, link } = req.body;
         let fileurl = null;
         let resourceType;
@@ -103,7 +98,6 @@ app.post("/api/v1/content", middleware_1.middleware, multermiddleware_1.uploads,
                 resource_type: resourceType,
             });
             fileurl = result.secure_url;
-            console.log(fileurl);
         }
         yield DB_1.ContentModel.create({
             title,
