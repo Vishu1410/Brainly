@@ -19,7 +19,7 @@ interface CardInterface{
     type : "youtube" | "twitter" | "image" | "file",
     onShareClick: (data: { title: string; link: string }) => void;
     onDelete : (id : string) => void
-    fileurl : string
+    fileurl : string 
     description ?: string
 }
 
@@ -27,20 +27,7 @@ export function Card({id,title,link,type,onShareClick,onDelete,fileurl,descripti
 
   console.log(fileurl)
      
-        const downloadFile = () => {
-          fetch(fileurl)
-            .then(res => res.blob())
-            .then(blob => {
-              const url = window.URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = 'file.pdf';  // suggested file name
-              document.body.appendChild(a);
-              a.click();
-              a.remove();
-              window.URL.revokeObjectURL(url);
-            });
-        };
+  
       
 
   
@@ -127,7 +114,7 @@ export function Card({id,title,link,type,onShareClick,onDelete,fileurl,descripti
                         size={100}
                         color="red"
                         style={{cursor : "pointer"}}
-                        onClick={downloadFile}
+                        onClick={openFileInBrowser}
                       />
                       <div className="h-20 mt-2 w-full border border-red-900 p-2 rounded-md ">
                         {description}

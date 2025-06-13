@@ -43,7 +43,6 @@ const user = new Schema({
 const content = new Schema({
     title: { type: String, required: true },
     description: { type: String },
-    link: { type: String },
     type: { type: String, enum: ['text', 'youtube', 'twitter', 'image', 'video', 'file'] },
     fileurl: String,
     tags: [{ type: mongoose_1.default.Types.ObjectId, ref: 'Tags' }],

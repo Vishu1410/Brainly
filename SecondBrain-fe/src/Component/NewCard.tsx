@@ -1,6 +1,6 @@
 "use client"
 import { Share2, Trash2, Calendar, Hash } from "lucide-react"
-// import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 // import { Badge } from "@/components/ui/badge"
 
 export interface ContentCardProps {
@@ -8,7 +8,7 @@ export interface ContentCardProps {
   title: string
   description: string
 //   hashtags: string[]
-  createdAt: Date
+  createdAt?: Date
   contentType: "image" | "youtube" | "twitter" | "file"
 //   contentData: {
 //     url?: string
@@ -47,11 +47,13 @@ export default function NewCard({
     }).format(date)
   }
 
+
+ 
   const renderContent = () => {
     switch (contentType) {
       case "image":
         return (
-          <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden">
+          <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden ">
             <img
               src={url || "/placeholder.svg?height=256&width=400"}
             //   alt={contentData.alt || "Content image"}
@@ -64,7 +66,7 @@ export default function NewCard({
         return (
           <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden">
             <iframe
-              src={`https://www.youtube.com/embed/${contentData.embedId}`}
+              src={`https://www.youtube.com/embed/`}
               title="YouTube video"
               className="w-full h-full"
               frameBorder="0"
@@ -76,7 +78,7 @@ export default function NewCard({
 
       case "twitter":
         return (
-          <div className="relative w-full min-h-64 bg-gray-100 rounded-lg overflow-hidden p-4">
+          <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden p-4">
             <div className="flex items-center justify-center h-full text-gray-500">
               <div className="text-center">
                 <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -91,18 +93,23 @@ export default function NewCard({
 
       case "file":
         return (
-          <div className="relative w-full h-32 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                  <span className="text-blue-600 font-semibold text-xs">
-                    {"FILE"}
-                  </span>
+          <a href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block">
+            <div className="relative w-full h-32 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                    <span className="text-blue-600 font-semibold text-xs">
+                      {"FILE"}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-700">{ "Document"}</p>
                 </div>
-                <p className="text-sm font-medium text-gray-700">{ "Document"}</p>
               </div>
             </div>
-          </div>
+          </a>
         )
 
       default:
@@ -112,10 +119,10 @@ export default function NewCard({
 
   return (
     <div
-      className={`bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden max-w-md mx-auto `}
+      className={`bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden w-full mx-auto m-2  `}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-100">
+      <div className="flex items-center justify-between p-4 border-b border-gray-100 w-full ">
         <div className="flex items-center space-x-3">
           <img
             src={logo || "/placeholder.svg?height=40&width=40"}
@@ -146,7 +153,7 @@ export default function NewCard({
       </div>
 
       {/* Content */}
-      <div className="p-4">{renderContent()}</div>
+      <div className="p-4 w-full">{renderContent()}</div>
 
       {/* Description */}
       <div className="px-4 pb-2">

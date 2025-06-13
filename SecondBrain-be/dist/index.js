@@ -99,12 +99,14 @@ app.post("/api/v1/content", middleware_1.middleware, multermiddleware_1.uploads,
             });
             fileurl = result.secure_url;
         }
+        else if (link) {
+            fileurl = link;
+        }
         yield DB_1.ContentModel.create({
             title,
             description,
             type,
-            fileurl: fileurl || null,
-            link: link || null,
+            fileurl: fileurl,
             //@ts-ignore
             userId: req.userId
         });

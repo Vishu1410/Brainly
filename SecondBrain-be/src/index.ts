@@ -106,6 +106,8 @@ app.post("/api/v1/content",middleware,uploads,async(req,res)=>{
               fileurl = result.secure_url
               
             
+        } else if(link){
+            fileurl = link
         }
 
         
@@ -114,8 +116,7 @@ app.post("/api/v1/content",middleware,uploads,async(req,res)=>{
             title,
             description,
             type,
-            fileurl : fileurl || null,
-            link : link || null,
+            fileurl : fileurl,
             //@ts-ignore
             userId : req.userId
         })

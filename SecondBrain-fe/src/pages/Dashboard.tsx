@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Button } from "../Component/Button";
-import { Card } from "../Component/Card";
 import { PlusIcon } from "../Icons/PlusIcon";
 import { ShareIcon } from "../Icons/ShareIcon";
 // import { CreateContentModel } from "../Component/CreateContentModel";
@@ -8,6 +7,8 @@ import { SideBar } from "../Component/SideBar";
 import usegetContent from "../hooks/usegetContent";
 import { ShareMenu } from "../Component/ShareMenu";
 import InputCard from "../Component/InputCard";
+import NewCard from "@/Component/NewCard";
+
 
 
 
@@ -15,12 +16,12 @@ import InputCard from "../Component/InputCard";
 export default function Dashboard() {
 
   const {contentArray,deleteContent} = usegetContent()
+  console.log(contentArray)
   
   const [ModelOpen,setModelOpen] = useState(false);
 
   const [shareOpen, setShareOpen] = useState(false);
   const [shareData, setShareData] = useState<{ title: string; link: string } | null>(null);
-  console.log(contentArray);
 
   const onShareClick = (data: { title: string; link: string }) => {
     setShareData(data);
@@ -58,6 +59,7 @@ export default function Dashboard() {
             <p>dashboard</p>
         </div>
         
+        
         <div className="flex justify-end gap-3 ">
           
           <Button onClick = {()=> {setModelOpen(true)}} title="Add Content" startIcon={<PlusIcon size="md"/>} varient="primary" />
@@ -65,13 +67,13 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full mt-2  border-red-500">
+      <div className=" gap-2 grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3  border-red-500">
 
         { contentArray.map((item : any)=>(
-          <Card id={item._id} key = {item._id} onShareClick={onShareClick}  title={item.title} type={item.type} link= {item.link} onDelete={()=>deleteContent(item._id)} fileurl={item.fileurl} description={item.description} />
+          <NewCard title={item.title} description={item.description} contentType={item.type} url={item.fileurl} onDelete={()=>deleteContent(item._id)} onShare={()=> onShareClick}/>
         ))}
         
-
+        
         
       </div>
 
