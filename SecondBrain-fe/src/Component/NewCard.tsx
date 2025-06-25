@@ -1,23 +1,21 @@
 "use client"
-import { Share2, Trash2, Calendar, Hash } from "lucide-react"
+import { Share2, Trash2, Calendar, Hash, ImageIcon, FileTextIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { YoutubeIcon } from "@/Icons/YoutubeIcon"
+import { XIcon } from "@/Icons/XIcon"
+// import { Logo } from "@/Icons/logo"
 // import { Badge } from "@/components/ui/badge"
 
+
+
 export interface ContentCardProps {
-  logo?: string
+  logo?:string
   title: string
   description: string
 //   hashtags: string[]
   createdAt?: Date
   contentType: "image" | "youtube" | "twitter" | "file"
-//   contentData: {
-//     url?: string
-//     embedId?: string
-//     fileName?: string
-//     fileType?: string
-//     alt?: string
-//   }
-  url?:string
+  url:string
 
   onDelete?: () => void
   onShare?: () => void
@@ -37,6 +35,7 @@ export default function NewCard({
   onShare,
 //   className = "",
 }: ContentCardProps) {
+
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat("en-US", {
       year: "numeric",
@@ -49,6 +48,63 @@ export default function NewCard({
 
 
  
+
+const getLogoByType = (type: string): React.ReactNode => {
+  switch (type) {
+    case "image":
+      return <ImageIcon className="w-6 h-6 text-pink-500" />;
+    case "youtube":
+      return <YoutubeIcon/>;
+    case "twitter":
+      return <XIcon/>;
+    
+    default:
+      return <FileTextIcon className="w-6 h-6 text-gray-400" />; // fallback
+  }
+};
+
+
+
+
+  const getYoutubeEmbedLink = (url: string): string => {
+    try {
+      const parsedUrl = new URL(url);
+      const hostname = parsedUrl.hostname;
+      let videoId = "";
+  
+      // Case: youtu.be short link
+      if (hostname === "youtu.be") {
+        videoId = parsedUrl.pathname.slice(1);
+      }
+  
+      // Case: standard YouTube links
+      if (hostname.includes("youtube.com")) {
+        // Case: shorts
+        if (parsedUrl.pathname.startsWith("/shorts/")) {
+          videoId = parsedUrl.pathname.split("/shorts/")[1];
+        }
+  
+        // Case: embed
+        else if (parsedUrl.pathname.startsWith("/embed/")) {
+          videoId = parsedUrl.pathname.split("/embed/")[1];
+        }
+  
+        // Case: watch?v=
+        else if (parsedUrl.searchParams.has("v")) {
+          videoId = parsedUrl.searchParams.get("v") || "";
+        }
+      }
+  
+      if (!videoId) return "";
+  
+      return `https://www.youtube.com/embed/${videoId}`;
+    } catch (error) {
+      console.error("Invalid YouTube URL:", url);
+      return "";
+    }
+  };
+ 
+
   const renderContent = () => {
     switch (contentType) {
       case "image":
@@ -63,32 +119,27 @@ export default function NewCard({
         )
 
       case "youtube":
+       
         return (
           <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden">
-            <iframe
-              src={`https://www.youtube.com/embed/`}
-              title="YouTube video"
-              className="w-full h-full"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
+            <iframe className="w-full h-full " src={getYoutubeEmbedLink(url)} title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
           </div>
         )
 
       case "twitter":
+        const fixedUrl = url ? url.replace("https://x.com", "https://twitter.com") : "";
         return (
-          <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden p-4">
-            <div className="flex items-center justify-center h-full text-gray-500">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <span className="text-white font-bold">T</span>
-                </div>
-                <p className="text-sm">Twitter Embed</p>
-                <p className="text-xs text-gray-400 mt-1">{url}</p>
-              </div>
-            </div>
+          <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-auto ">
+           
+                
+                <blockquote className="twitter-tweet w-full h-full">
+                      <a href= {fixedUrl}></a> 
+                    </blockquote>
+
           </div>
+                 
+              
+          
         )
 
       case "file":
@@ -124,12 +175,15 @@ export default function NewCard({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-100 w-full ">
         <div className="flex items-center space-x-3">
-          <img
-            src={logo || "/placeholder.svg?height=40&width=40"}
+          {/* <img
+            src={logo}
             alt="Logo"
             className="w-10 h-10 rounded-full object-cover"
-          />
-          <h3 className="font-semibold text-gray-900 truncate max-w-32">{title}</h3>
+          /> */}
+          <div className="w-10 h-10 rounded-full object-cover flex items-center justify-center ">
+            {getLogoByType(contentType)}
+          </div>
+          <h3 className="font-semibold capitalize  text-gray-900 truncate max-w-32">{title}</h3>
         </div>
 
         <div className="flex items-center space-x-2">

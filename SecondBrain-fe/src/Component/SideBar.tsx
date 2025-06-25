@@ -1,19 +1,114 @@
-import { XIcon } from "../Icons/XIcon";
-import { YoutubeIcon } from "../Icons/YoutubeIcon";
-import { SideBarItems } from "./SideBarItems";
-import { Logo } from "../Icons/logo";
+// import { XIcon } from "../Icons/XIcon";
+// import { YoutubeIcon } from "../Icons/YoutubeIcon";
+// import { SideBarItems } from "./SideBarItems";
+// import { Logo } from "../Icons/logo";
+import { Brain, Youtube, Twitter, ImageIcon, Video, File, LogOut } from "lucide-react"
 
-export function SideBar(){
-    return <div className="h-screen bg-white w-72 border-r fixed left-0 top-0 pl-2">
-        <div className="flex text-2xl items-center gap-2 pt-2 pb-4 ">
-            <Logo/>
-            Brainly
-        </div>
-        <div className="flex flex-col items-start pl-4 ">
-        <SideBarItems text="Youtube" icon={<YoutubeIcon/>}/>
-        <SideBarItems text="twitter" icon={<XIcon/>}/>
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarRail,
+  } from "@/components/ui/sidebar"
 
-        </div>
-            
-    </div>
+  interface SideBarProps extends React.ComponentProps<typeof Sidebar> {
+    onSelectType: (type: string) => void;
+  }
+  
+
+  const navigationItems = [
+    {
+      title: "youtube",
+      url: "#",
+      icon: Youtube,
+    },
+    {
+      title: "twitter",
+      url: "#",
+      icon: Twitter,
+    },
+    {
+      title: "image",
+      url: "#",
+      icon: ImageIcon,
+    },
+    {
+      title: "video",
+      url: "#",
+      icon: Video,
+    },
+    {
+      title: "file",
+      url: "#",
+      icon: File,
+    },
+  ]
+
+const SideBar = ({ onSelectType, ...props }: SideBarProps) => {
+    return (
+        <Sidebar {...props}>
+          <SidebarHeader>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton size="lg" asChild>
+                  <button className="flex items-center gap-2">
+                    <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-blue-600 text-white">
+                      <Brain className="size-4" />
+                    </div>
+                    <div className="flex flex-col gap-0.5 leading-none">
+                      <span className="font-bold text-lg">Brainly</span>
+                    </div>
+                  </button>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarHeader>
+    
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {navigationItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild>
+                        <button className="flex items-center gap-2 cursor-pointer"
+                        onClick={()=>onSelectType(item.title)}>
+                          <item.icon className="size-4" />
+                          <span>{item.title}</span>
+                        </button>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+    
+          <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <button className="flex items-center gap-2 w-full text-red-600 hover:text-red-700 hover:bg-red-50">
+                    <LogOut className="size-4" />
+                    <span>Logout</span>
+                  </button>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
+    
+          <SidebarRail />
+        </Sidebar>
+      )
 }
+
+export default SideBar
+

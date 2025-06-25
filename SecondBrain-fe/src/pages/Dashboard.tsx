@@ -3,14 +3,13 @@ import { Button } from "../Component/Button";
 import { PlusIcon } from "../Icons/PlusIcon";
 import { ShareIcon } from "../Icons/ShareIcon";
 // import { CreateContentModel } from "../Component/CreateContentModel";
-import { SideBar } from "../Component/SideBar";
+
 import usegetContent from "../hooks/usegetContent";
 import { ShareMenu } from "../Component/ShareMenu";
 import InputCard from "../Component/InputCard";
 import NewCard from "@/Component/NewCard";
-
-
-
+import SideBar from "@/Component/SideBar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 
 export default function Dashboard() {
@@ -22,6 +21,10 @@ export default function Dashboard() {
 
   const [shareOpen, setShareOpen] = useState(false);
   const [shareData, setShareData] = useState<{ title: string; link: string } | null>(null);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+  
+ 
+
 
   const onShareClick = (data: { title: string; link: string }) => {
     setShareData(data);
@@ -33,18 +36,15 @@ export default function Dashboard() {
     
 
   return <div>
+    <SidebarProvider>
+      <SidebarInset>
+        <SideBar onSelectType={(type) => setSelectedType(type)}  />
+        
+        
 
+    <div className= "p-2 ml-65 min-h-screen bg-gray-100 border-2" >
 
-    <SideBar/>
-
-    
-    
-
-    <div className="p-2 ml-72 min-h-screen bg-gray-100 border-2">
-
-      {/* <CreateContentModel open={ModelOpen} close={()=>{
-        setModelOpen(false)
-      }}/> */}
+      
       {ModelOpen && <InputCard onClose={() => setModelOpen(false)} />}
       
       {shareOpen && shareData && (
@@ -69,7 +69,7 @@ export default function Dashboard() {
 
       <div className=" gap-2 grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3  border-red-500">
 
-        { contentArray.map((item : any)=>(
+        { contentArray.filter((item: any) => !selectedType || item.type === selectedType).map((item : any)=>(
           <NewCard title={item.title} description={item.description} contentType={item.type} url={item.fileurl} onDelete={()=>deleteContent(item._id)} onShare={()=> onShareClick}/>
         ))}
         
@@ -79,6 +79,8 @@ export default function Dashboard() {
 
    </div>
     
+   </SidebarInset>
+   </SidebarProvider>
       
   </div>
   
