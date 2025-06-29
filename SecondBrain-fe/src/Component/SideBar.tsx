@@ -51,7 +51,15 @@ import {
     },
   ]
 
+
+
 const SideBar = ({ onSelectType, ...props }: SideBarProps) => {
+
+    const handleLogout = ()=>{
+      localStorage.removeItem("token");
+      window.location.href = "/login"
+    }
+
     return (
         <Sidebar {...props}>
           <SidebarHeader>
@@ -96,7 +104,7 @@ const SideBar = ({ onSelectType, ...props }: SideBarProps) => {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <button className="flex items-center gap-2 w-full text-red-600 hover:text-red-700 hover:bg-red-50">
+                  <button onClick={handleLogout} className="flex items-center gap-2 w-full text-red-600 hover:text-red-700 hover:bg-red-50">
                     <LogOut className="size-4" />
                     <span>Logout</span>
                   </button>

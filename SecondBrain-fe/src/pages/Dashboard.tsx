@@ -10,9 +10,14 @@ import InputCard from "../Component/InputCard";
 import NewCard from "@/Component/NewCard";
 import SideBar from "@/Component/SideBar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { useNavigate } from "react-router-dom";
+// import useAutologout from "@/hooks/useAutologout";
 
 
 export default function Dashboard() {
+
+  const navigate = useNavigate();
+
 
   const {contentArray,deleteContent} = usegetContent()
   console.log(contentArray)
@@ -25,6 +30,12 @@ export default function Dashboard() {
   
  
 
+  // const logout = ()=>{
+  //   localStorage.removeItem("token");
+  //   navigate("/login")
+  // }
+
+  // useAutologout(logout,15)
 
   const onShareClick = (data: { title: string; link: string }) => {
     setShareData(data);
@@ -70,7 +81,7 @@ export default function Dashboard() {
       <div className=" gap-2 grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3  border-red-500">
 
         { contentArray.filter((item: any) => !selectedType || item.type === selectedType).map((item : any)=>(
-          <NewCard title={item.title} description={item.description} contentType={item.type} url={item.fileurl} onDelete={()=>deleteContent(item._id)} onShare={()=> onShareClick}/>
+          <NewCard title={item.title} description={item.description} contentType={item.type} url={item.fileurl} createdAt={new Date(item.createdAt)} onDelete={()=>deleteContent(item._id)} onShare={()=> onShareClick}/>
         ))}
         
         

@@ -48,6 +48,7 @@ const InputCard = ({ onClose }: { onClose: () => void }) => {
     }
 
     try {
+      console.log(localStorage.getItem("token"));
       const res = await axios.post(BACKEND_URL+"/api/v1/content",data,{
         headers:{
           Authorization : localStorage.getItem("token")
@@ -72,7 +73,7 @@ const InputCard = ({ onClose }: { onClose: () => void }) => {
           <X />
         </button>
 
-        <h2 className="text-xl font-semibold">Add Content</h2>
+        <h2 className="text-xl font-semibold ">Add Content</h2>
 
         <div className="space-y-2">
           <label className="block text-sm font-medium">Type</label>

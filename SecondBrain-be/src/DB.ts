@@ -4,8 +4,42 @@ const Schema = mongoose.Schema;
 
 
 const user = new Schema({
-   username : { type:String,unique : true },
-   password  :String
+    // manuall login
+    username: {
+    type: String,
+    unique: true,
+    
+    },
+
+    password: {
+    type: String,
+    required : true // don’t return password by default
+    },
+
+    // google login
+
+    email: {
+        type: String,
+        required: true,
+        lowercase: true,
+        unique: true,
+    },
+    
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true, // allows null if not using Google login
+      },
+
+      accessToken: String,
+      refreshToken: String,
+  
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+    
+  
 })
 
 

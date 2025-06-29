@@ -19,7 +19,7 @@ const varientStyles = {
     "secondry" : "bg-purple-300 text-purple-600"
 }
 
-const defaultStyle = "px-4 py-2 rounded-md flex items-center gap-1 ";
+const defaultStyle = "px-4 py-2 rounded-md flex items-center gap-1 cursor-pointer ";
 
 
 export function Button(props : ButtonInterface){

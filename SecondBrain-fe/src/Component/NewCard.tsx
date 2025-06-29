@@ -3,6 +3,7 @@ import { Share2, Trash2, Calendar, Hash, ImageIcon, FileTextIcon } from "lucide-
 import { Button } from "@/components/ui/button"
 import { YoutubeIcon } from "@/Icons/YoutubeIcon"
 import { XIcon } from "@/Icons/XIcon"
+
 // import { Logo } from "@/Icons/logo"
 // import { Badge } from "@/components/ui/badge"
 
@@ -36,15 +37,17 @@ export default function NewCard({
 //   className = "",
 }: ContentCardProps) {
 
-  const formatDate = (date: Date) => {
+  const formatDate = (createdAt: Date) => {
     return new Intl.DateTimeFormat("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    }).format(date)
+    }).format(createdAt)
   }
+
+ 
 
 
  
@@ -143,6 +146,15 @@ const getLogoByType = (type: string): React.ReactNode => {
         )
 
       case "file":
+        const fileExtension = url?.split(".").pop()?.toLowerCase(); // Get 'pdf' or 'docx'
+
+        // Define styles based on extension
+        const isPDF = fileExtension === "pdf";
+        const isDOCX = fileExtension === "docx";
+      
+        const iconBgColor = isPDF ? "bg-red-100" : isDOCX ? "bg-blue-100" : "bg-gray-100";
+        const iconTextColor = isPDF ? "text-red-600" : isDOCX ? "text-blue-600" : "text-gray-600";
+        const label = isPDF ? "PDF" : isDOCX ? "DOCX" : "FILE";
         return (
           <a href={url}
             target="_blank"
@@ -151,9 +163,9 @@ const getLogoByType = (type: string): React.ReactNode => {
             <div className="relative w-full h-32 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg overflow-hidden">
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-                    <span className="text-blue-600 font-semibold text-xs">
-                      {"FILE"}
+                  <div className={`w-12 h-12 ${iconBgColor} rounded-lg flex items-center justify-center mx-auto mb-2`}>
+                    <span className={`font-semibold text-xs ${iconTextColor}`}>
+                      {label}
                     </span>
                   </div>
                   <p className="text-sm font-medium text-gray-700">{ "Document"}</p>

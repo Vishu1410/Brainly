@@ -7,6 +7,7 @@ const usegetContent = () => {
 
   async function fetchdata(){
         try {
+            console.log(localStorage.getItem("token"))
             const res = await axios.get(BACKEND_URL+"/api/v1/content",{
                 headers : {
                     Authorization : localStorage.getItem("token")

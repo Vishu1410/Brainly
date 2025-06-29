@@ -10,6 +10,9 @@ import dotenv from "dotenv"
 import { v2 as cloudinary } from "cloudinary";
 import { uploads } from "./multermiddleware/multermiddleware";
 import connectToMongo from "./db/connectToMongo";
+import passport from "passport"
+import session from "express-session"
+import { Strategy as GoogleStrategy, Profile,VerifyCallback} from "passport-google-oauth20";
 
 
 dotenv.config()
@@ -29,6 +32,82 @@ cloudinary.config({
     api_secret: process.env.api_secret,
   });
 
+
+
+app.use(passport.initialize());
+
+
+passport.use(new GoogleStrategy({
+    clientID: process.env.clientID!,
+    clientSecret: process.env.clientSecret!,
+    callbackURL: "/auth/google/callback",
+  }, async(accessToken : string, refreshToken : string , profile : Profile, done:VerifyCallback) => {
+    // Save user to DB or create new
+    try {
+        const googleEmail = profile.emails?.[0]?.value;
+        if(!googleEmail){
+            return done(new Error("google email not found"),false);
+        }
+
+        let user = await UserModel.findOne({email:googleEmail});
+        if(!user){
+            await UserModel.create({
+                email : googleEmail,
+                googleId : profile.id,
+                
+            })
+        }
+
+       
+
+        
+
+        const token = jwt.sign(
+            //@ts-ignore
+            { id : user._id },
+            process.env.JWT_SECRATE!,
+            { expiresIn: "7d" }
+            );
+        
+            // ✅ Use postMessage or redirect to send token
+            const html = `
+            <script>
+                window.opener.postMessage({ token: "${token}" }, "http://localhost:5173/dashboard");
+                window.close();
+            </script>
+            `;
+            return done(null, { html });
+
+        
+        
+        
+    } catch (error) {
+        console.error("google auth error : ",error);
+        return done(error as any, false)
+        
+    }
+    
+
+  }));
+
+  
+  app.get("/auth/google", passport.authenticate("google", { scope: ["profile", "email"],session : false }));
+
+app.get("/auth/google/callback",
+  passport.authenticate("google", { session:false, failureRedirect: "/login" }),
+  async (req, res) => {
+    // Successful login
+    const { html } = req.user as any;
+    res.send(html); 
+
+    
+    
+
+    // Redirect to frontend with JWT in query
+   
+   
+  }
+);
 
 
 
@@ -57,15 +136,21 @@ app.post("/api/v1/login",async (req,res)=>{
     try{
         const username = req.body.username;
         const password = req.body.password;
+        const Secret = process.env.JWT_SECRATE!
+
         const verifyUser = await UserModel.findOne({
             username : username
         })
+
         //@ts-ignore
-        const matchPassword = bcrypt.compare(password,verifyUser.password);
+        const matchPassword = await bcrypt.compare(password,verifyUser.password);
+        console.log("this is match password : " + matchPassword)
         if(verifyUser && matchPassword){
             const token = jwt.sign({
                 id : verifyUser._id
-            },JWT_SECRATE)
+            },Secret)
+
+
 
             res.send({
                 Authorization : token
@@ -83,9 +168,12 @@ app.post("/api/v1/login",async (req,res)=>{
 
 app.post("/api/v1/content",middleware,uploads,async(req,res)=>{
     try{
+        //@ts-ignore
+        console.log(req.userId)
         
         const file = req.file as Express.Multer.File;
         const {title,description,type,link} = req.body;
+       
         
 
         let fileurl = null;

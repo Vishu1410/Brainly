@@ -23,6 +23,8 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const cloudinary_1 = require("cloudinary");
 const multermiddleware_1 = require("./multermiddleware/multermiddleware");
 const connectToMongo_1 = __importDefault(require("./db/connectToMongo"));
+const passport_1 = __importDefault(require("passport"));
+const passport_google_oauth20_1 = require("passport-google-oauth20");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
@@ -34,6 +36,50 @@ cloudinary_1.v2.config({
     api_key: process.env.api_key,
     api_secret: process.env.api_secret,
 });
+app.use(passport_1.default.initialize());
+passport_1.default.use(new passport_google_oauth20_1.Strategy({
+    clientID: process.env.clientID,
+    clientSecret: process.env.clientSecret,
+    callbackURL: "/auth/google/callback",
+}, (accessToken, refreshToken, profile, done) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
+    // Save user to DB or create new
+    try {
+        const googleEmail = (_b = (_a = profile.emails) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.value;
+        if (!googleEmail) {
+            return done(new Error("google email not found"), false);
+        }
+        let user = yield DB_1.UserModel.findOne({ email: googleEmail });
+        if (!user) {
+            yield DB_1.UserModel.create({
+                email: googleEmail,
+                googleId: profile.id,
+            });
+        }
+        const token = jsonwebtoken_1.default.sign(
+        //@ts-ignore
+        { id: user._id }, process.env.JWT_SECRATE, { expiresIn: "7d" });
+        // ✅ Use postMessage or redirect to send token
+        const html = `
+            <script>
+                window.opener.postMessage({ token: "${token}" }, "http://localhost:5173/dashboard");
+                window.close();
+            </script>
+            `;
+        return done(null, { html });
+    }
+    catch (error) {
+        console.error("google auth error : ", error);
+        return done(error, false);
+    }
+})));
+app.get("/auth/google", passport_1.default.authenticate("google", { scope: ["profile", "email"], session: false }));
+app.get("/auth/google/callback", passport_1.default.authenticate("google", { session: false, failureRedirect: "/login" }), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    // Successful login
+    const { html } = req.user;
+    res.send(html);
+    // Redirect to frontend with JWT in query
+}));
 app.post("/api/v1/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const username = req.body.username;
@@ -57,15 +103,17 @@ app.post("/api/v1/login", (req, res) => __awaiter(void 0, void 0, void 0, functi
     try {
         const username = req.body.username;
         const password = req.body.password;
+        const Secret = process.env.JWT_SECRATE;
         const verifyUser = yield DB_1.UserModel.findOne({
             username: username
         });
         //@ts-ignore
-        const matchPassword = bcrypt_1.default.compare(password, verifyUser.password);
+        const matchPassword = yield bcrypt_1.default.compare(password, verifyUser.password);
+        console.log("this is match password : " + matchPassword);
         if (verifyUser && matchPassword) {
             const token = jsonwebtoken_1.default.sign({
                 id: verifyUser._id
-            }, JWT_SECRATE);
+            }, Secret);
             res.send({
                 Authorization: token
             });
@@ -82,6 +130,8 @@ app.post("/api/v1/login", (req, res) => __awaiter(void 0, void 0, void 0, functi
 }));
 app.post("/api/v1/content", middleware_1.middleware, multermiddleware_1.uploads, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
+        //@ts-ignore
+        console.log(req.userId);
         const file = req.file;
         const { title, description, type, link } = req.body;
         let fileurl = null;
