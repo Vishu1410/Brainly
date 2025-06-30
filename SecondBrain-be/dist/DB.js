@@ -73,6 +73,7 @@ const content = new Schema({
     tags: [{ type: mongoose_1.default.Types.ObjectId, ref: 'Tags' }],
     createdAt: { type: Date, default: Date.now() },
     userId: { type: mongoose_1.default.Types.ObjectId, ref: 'UserModel', required: true },
+    shareToken: { type: String, unique: true, sparse: true }
 });
 const tags = new Schema({
     title: { type: String, require: true }

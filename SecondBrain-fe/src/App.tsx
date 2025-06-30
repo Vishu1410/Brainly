@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard"
 import { Toaster } from "react-hot-toast"
 import LoginPage from "./pages/Login-page"
 import SignupPage from "./pages/Signup-page"
+import Sharedview from "./pages/Sharedview"
 
 
 const App = ()=>{
@@ -17,6 +18,7 @@ const App = ()=>{
         <Route path="/signup" element = {<SignupPage/>}/>
         <Route path="/login" element = {<LoginPage/>}/>
         <Route path="/dashboard" element = {<Dashboard/>}/>
+        <Route path="/shared/:shareToken" element = {<Sharedview/>}/>
 
           
         </Routes>

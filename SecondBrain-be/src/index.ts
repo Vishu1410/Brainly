@@ -1,4 +1,4 @@
-import express from "express"
+import express,{ Request, Response } from "express"
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
@@ -13,6 +13,7 @@ import connectToMongo from "./db/connectToMongo";
 import passport from "passport"
 import session from "express-session"
 import { Strategy as GoogleStrategy, Profile,VerifyCallback} from "passport-google-oauth20";
+import crypto from "crypto"
 
 
 dotenv.config()
@@ -144,7 +145,7 @@ app.post("/api/v1/login",async (req,res)=>{
 
         //@ts-ignore
         const matchPassword = await bcrypt.compare(password,verifyUser.password);
-        console.log("this is match password : " + matchPassword)
+       
         if(verifyUser && matchPassword){
             const token = jwt.sign({
                 id : verifyUser._id
@@ -174,7 +175,7 @@ app.post("/api/v1/content",middleware,uploads,async(req,res)=>{
         const file = req.file as Express.Multer.File;
         const {title,description,type,link} = req.body;
        
-        
+        const shareToken = crypto.randomBytes(8).toString("hex");
 
         let fileurl = null;
         let resourceType: "auto" | "raw";
@@ -206,7 +207,8 @@ app.post("/api/v1/content",middleware,uploads,async(req,res)=>{
             type,
             fileurl : fileurl,
             //@ts-ignore
-            userId : req.userId
+            userId : req.userId,
+            shareToken
         })
 
         res.status(201).send({
@@ -250,66 +252,86 @@ app.delete("/api/v1/delete/:id",middleware,async(req,res)=>{
     })
 })
 
-app.post("/api/v1/brain/share",middleware,async(req,res)=>{
-    const share = req.body.share;
-    if(share){
+// app.post("/api/v1/brain/share",middleware,async(req,res)=>{
+//     const share = req.body.share;
+//     if(share){
 
-        const existingUser = await LinkModel.findOne({
-            //@ts-ignore
-            userId : req.userId
-        })
-        if(existingUser){
-            res.json({
-                hash : existingUser.hash
-            })
-            return
+//         const existingUser = await LinkModel.findOne({
+//             //@ts-ignore
+//             userId : req.userId
+//         })
+//         if(existingUser){
+//             res.json({
+//                 hash : existingUser.hash
+//             })
+//             return
+//         }
+
+
+//         const hash = random(10);
+//         await LinkModel.create({
+//             //@ts-ignore
+//             userId : req.userId,
+//             hash : hash
+//         })
+//         res.json({
+//             hash
+//         })
+//     }
+// })
+
+// app.get("/api/v1/brain/:sharelink",async(req,res)=>{
+//     //@ts-ignore
+//     const hash = req.params.sharelink;
+//     const link = await LinkModel.findOne({
+//         hash
+//     })
+
+//     if(!link){
+//         res.status(411).json({
+//             "message" : "sorry incorrect input..."
+//         })
+//         return
+//     }
+
+//     const content = await ContentModel.find({
+//         userId : link.userId
+//     })
+
+//     const user = await UserModel.findOne({
+//         _id : link.userId
+//     })
+
+//     if(!user){
+//         res.status(411).json({
+//             message : "user Not found...ideally should not happen..."
+//         })
+//         return
+//     }
+//     res.json({
+//         username : user.username,
+//         content : content
+//     })
+
+// })
+
+
+
+//@ts-ignore
+app.get("/api/v1/shared/:token",middleware, async (req,res) =>{
+    try {
+        const { token } = req.params;
+        const content = await ContentModel.findOne({shareToken : token});
+    
+        if(!content){
+            return res.status(404).json({message : "content not found"})
         }
-
-
-        const hash = random(10);
-        await LinkModel.create({
-            //@ts-ignore
-            userId : req.userId,
-            hash : hash
-        })
-        res.json({
-            hash
-        })
+        res.send({content})
+        
+    } catch (error) {
+        console.error("error in sending token : ",error)
+        
     }
-})
-
-app.get("/api/v1/brain/:sharelink",async(req,res)=>{
-    //@ts-ignore
-    const hash = req.params.sharelink;
-    const link = await LinkModel.findOne({
-        hash
-    })
-
-    if(!link){
-        res.status(411).json({
-            "message" : "sorry incorrect input..."
-        })
-        return
-    }
-
-    const content = await ContentModel.find({
-        userId : link.userId
-    })
-
-    const user = await UserModel.findOne({
-        _id : link.userId
-    })
-
-    if(!user){
-        res.status(411).json({
-            message : "user Not found...ideally should not happen..."
-        })
-        return
-    }
-    res.json({
-        username : user.username,
-        content : content
-    })
 
 })
 

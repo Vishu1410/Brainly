@@ -17,7 +17,6 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const DB_1 = require("./DB");
 const middleware_1 = require("./middleware");
-const utlis_1 = require("./utlis");
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const cloudinary_1 = require("cloudinary");
@@ -25,6 +24,7 @@ const multermiddleware_1 = require("./multermiddleware/multermiddleware");
 const connectToMongo_1 = __importDefault(require("./db/connectToMongo"));
 const passport_1 = __importDefault(require("passport"));
 const passport_google_oauth20_1 = require("passport-google-oauth20");
+const crypto_1 = __importDefault(require("crypto"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
@@ -109,7 +109,6 @@ app.post("/api/v1/login", (req, res) => __awaiter(void 0, void 0, void 0, functi
         });
         //@ts-ignore
         const matchPassword = yield bcrypt_1.default.compare(password, verifyUser.password);
-        console.log("this is match password : " + matchPassword);
         if (verifyUser && matchPassword) {
             const token = jsonwebtoken_1.default.sign({
                 id: verifyUser._id
@@ -134,6 +133,7 @@ app.post("/api/v1/content", middleware_1.middleware, multermiddleware_1.uploads,
         console.log(req.userId);
         const file = req.file;
         const { title, description, type, link } = req.body;
+        const shareToken = crypto_1.default.randomBytes(8).toString("hex");
         let fileurl = null;
         let resourceType;
         if (file) {
@@ -158,7 +158,8 @@ app.post("/api/v1/content", middleware_1.middleware, multermiddleware_1.uploads,
             type,
             fileurl: fileurl,
             //@ts-ignore
-            userId: req.userId
+            userId: req.userId,
+            shareToken
         });
         res.status(201).send({
             "message": "content added..."
@@ -195,58 +196,72 @@ app.delete("/api/v1/delete/:id", middleware_1.middleware, (req, res) => __awaite
         "message": "content deleted..."
     });
 }));
-app.post("/api/v1/brain/share", middleware_1.middleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const share = req.body.share;
-    if (share) {
-        const existingUser = yield DB_1.LinkModel.findOne({
-            //@ts-ignore
-            userId: req.userId
-        });
-        if (existingUser) {
-            res.json({
-                hash: existingUser.hash
-            });
-            return;
+// app.post("/api/v1/brain/share",middleware,async(req,res)=>{
+//     const share = req.body.share;
+//     if(share){
+//         const existingUser = await LinkModel.findOne({
+//             //@ts-ignore
+//             userId : req.userId
+//         })
+//         if(existingUser){
+//             res.json({
+//                 hash : existingUser.hash
+//             })
+//             return
+//         }
+//         const hash = random(10);
+//         await LinkModel.create({
+//             //@ts-ignore
+//             userId : req.userId,
+//             hash : hash
+//         })
+//         res.json({
+//             hash
+//         })
+//     }
+// })
+// app.get("/api/v1/brain/:sharelink",async(req,res)=>{
+//     //@ts-ignore
+//     const hash = req.params.sharelink;
+//     const link = await LinkModel.findOne({
+//         hash
+//     })
+//     if(!link){
+//         res.status(411).json({
+//             "message" : "sorry incorrect input..."
+//         })
+//         return
+//     }
+//     const content = await ContentModel.find({
+//         userId : link.userId
+//     })
+//     const user = await UserModel.findOne({
+//         _id : link.userId
+//     })
+//     if(!user){
+//         res.status(411).json({
+//             message : "user Not found...ideally should not happen..."
+//         })
+//         return
+//     }
+//     res.json({
+//         username : user.username,
+//         content : content
+//     })
+// })
+//@ts-ignore
+app.get("/api/v1/shared/:token", middleware_1.middleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { token } = req.params;
+        const content = yield DB_1.ContentModel.findOne({ shareToken: token });
+        if (!content) {
+            return res.status(404).json({ message: "content not found" });
         }
-        const hash = (0, utlis_1.random)(10);
-        yield DB_1.LinkModel.create({
-            //@ts-ignore
-            userId: req.userId,
-            hash: hash
-        });
-        res.json({
-            hash
-        });
+        res.send({ content });
     }
-}));
-app.get("/api/v1/brain/:sharelink", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    //@ts-ignore
-    const hash = req.params.sharelink;
-    const link = yield DB_1.LinkModel.findOne({
-        hash
-    });
-    if (!link) {
-        res.status(411).json({
-            "message": "sorry incorrect input..."
-        });
-        return;
+    catch (error) {
+        console.error("error in sending token : ", error);
     }
-    const content = yield DB_1.ContentModel.find({
-        userId: link.userId
-    });
-    const user = yield DB_1.UserModel.findOne({
-        _id: link.userId
-    });
-    if (!user) {
-        res.status(411).json({
-            message: "user Not found...ideally should not happen..."
-        });
-        return;
-    }
-    res.json({
-        username: user.username,
-        content: content
-    });
 }));
 app.listen(PORT, () => {
     (0, connectToMongo_1.default)();

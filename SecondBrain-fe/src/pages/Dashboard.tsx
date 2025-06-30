@@ -81,7 +81,15 @@ export default function Dashboard() {
       <div className=" gap-2 grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3  border-red-500">
 
         { contentArray.filter((item: any) => !selectedType || item.type === selectedType).map((item : any)=>(
-          <NewCard title={item.title} description={item.description} contentType={item.type} url={item.fileurl} createdAt={new Date(item.createdAt)} onDelete={()=>deleteContent(item._id)} onShare={()=> onShareClick}/>
+        
+          <NewCard 
+          title={item.title} 
+          description={item.description} 
+          contentType={item.type}
+          url={item.fileurl}
+          createdAt={new Date(item.createdAt)}
+          onDelete={()=>deleteContent(item._id)} 
+          onShare={()=>{setShareData({title : item.title,link :`${window.location.origin}/shared/${item.shareToken}`}); setShareOpen(true)}}/>
         ))}
         
         
