@@ -49,11 +49,13 @@ passport_1.default.use(new passport_google_oauth20_1.Strategy({
         if (!googleEmail) {
             return done(new Error("google email not found"), false);
         }
+        const brainToken = crypto_1.default.randomBytes(10).toString("hex");
         let user = yield DB_1.UserModel.findOne({ email: googleEmail });
         if (!user) {
             yield DB_1.UserModel.create({
                 email: googleEmail,
                 googleId: profile.id,
+                brainToken
             });
         }
         const token = jsonwebtoken_1.default.sign(
@@ -62,7 +64,7 @@ passport_1.default.use(new passport_google_oauth20_1.Strategy({
         // ✅ Use postMessage or redirect to send token
         const html = `
             <script>
-                window.opener.postMessage({ token: "${token}" }, "http://localhost:5173/dashboard");
+                window.opener.postMessage({ token: "${token}",brainToken:"${brainToken}" }, "http://localhost:5173/dashboard");
                 window.close();
             </script>
             `;
@@ -84,10 +86,12 @@ app.post("/api/v1/signup", (req, res) => __awaiter(void 0, void 0, void 0, funct
     try {
         const username = req.body.username;
         const password = req.body.password;
+        const brainToken = crypto_1.default.randomBytes(10).toString("hex");
         const hashpassword = yield bcrypt_1.default.hash(password, 10);
         yield DB_1.UserModel.create({
             username: username,
-            password: hashpassword
+            password: hashpassword,
+            brainToken
         });
         res.json({
             message: "signup Sucessfull..."
@@ -113,8 +117,12 @@ app.post("/api/v1/login", (req, res) => __awaiter(void 0, void 0, void 0, functi
             const token = jsonwebtoken_1.default.sign({
                 id: verifyUser._id
             }, Secret);
+            const Username = verifyUser.username;
+            const brainToken = verifyUser.brainToken;
             res.send({
-                Authorization: token
+                Username: Username,
+                Authorization: token,
+                brainToken: brainToken
             });
         }
         else {
@@ -261,6 +269,19 @@ app.get("/api/v1/shared/:token", middleware_1.middleware, (req, res) => __awaite
     }
     catch (error) {
         console.error("error in sending token : ", error);
+    }
+}));
+app.get("/api/v1/sharebrain/:token", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { token } = req.params;
+        const user = yield DB_1.UserModel.findOne({ brainToken: token });
+        if (!user)
+            res.status(404).json({ error: "invalid link" });
+        const content = yield DB_1.ContentModel.find({ userId: user === null || user === void 0 ? void 0 : user._id });
+        res.json(content);
+    }
+    catch (error) {
+        console.error("error in share complete brain : ", error);
     }
 }));
 app.listen(PORT, () => {

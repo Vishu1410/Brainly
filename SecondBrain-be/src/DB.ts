@@ -20,7 +20,6 @@ const user = new Schema({
 
     email: {
         type: String,
-        required: true,
         lowercase: true,
         unique: true,
     },
@@ -38,7 +37,10 @@ const user = new Schema({
         type: Date,
         default: Date.now,
       },
-    
+    brainToken: {
+        type : String,
+        unique : true
+    }
   
 })
 

@@ -8,23 +8,31 @@ import { Toaster } from "react-hot-toast"
 import LoginPage from "./pages/Login-page"
 import SignupPage from "./pages/Signup-page"
 import Sharedview from "./pages/Sharedview"
+import { UserProvider } from "./Context/UserContext"
+import ViewSharedBrain from "./pages/ViewSharedBrain"
 
 
 const App = ()=>{
-  return <BrowserRouter>
-    
-      <Toaster/>
-        <Routes>
-        <Route path="/signup" element = {<SignupPage/>}/>
-        <Route path="/login" element = {<LoginPage/>}/>
-        <Route path="/dashboard" element = {<Dashboard/>}/>
-        <Route path="/shared/:shareToken" element = {<Sharedview/>}/>
+  return <UserProvider> 
+    <BrowserRouter>
+        <Toaster/>
+          <Routes>
 
-          
-        </Routes>
+            
+            <Route path="/signup" element = {<SignupPage/>}/>
+            <Route path="/login" element = {<LoginPage/>}/>
+            <Route path="/dashboard" element = {<Dashboard/>}/>
+            <Route path="/shared/:shareToken" element = {<Sharedview/>}/>
+            <Route path="/sharebrain/:brainToken" element = {<ViewSharedBrain/>}/>
+
+
+            
+          </Routes>
+   
       
 
-  </BrowserRouter>
+    </BrowserRouter>
+  </UserProvider>
 }
 
 

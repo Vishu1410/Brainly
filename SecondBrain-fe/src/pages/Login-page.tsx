@@ -11,9 +11,13 @@ import { Separator } from "@/components/ui/separator"
 import { Brain, Eye, EyeOff } from "lucide-react"
 import axios from "axios"
 import { BACKEND_URL } from "@/config"
+import { useAuthStore } from "@/store/useAuthStore"
+
+
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
+  
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -27,14 +31,32 @@ export default function LoginPage() {
     })
   }
 
+  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
     try {
       // Login API call
+      console.log("inside login page")
       const res = await axios.post(BACKEND_URL+"/api/v1/login",formData);
-      console.log(res);
+
+      console.log("res.data.braintoken : ",res.data.brainToken)
+
+      const brainToken = res.data.brainToken
+      const username = res.data.Username
+      console.log("checking for braintoken : ",brainToken)
+      console.log("checking for username : ",username)
+
+      useAuthStore.getState().setUser(brainToken,username)
+    
+
+      console.log("inside login page : " + res.data);
+
+     
+      localStorage.setItem("brainToken",brainToken)
+
       localStorage.setItem("token",res.data.Authorization);
       window.location.href = "/dashboard"
 
@@ -53,11 +75,17 @@ export default function LoginPage() {
       const listener = (event: MessageEvent) => {
         if (event.origin !== "http://localhost:3000") return;
     
-        const { token } = event.data;
+        const { token, brainToken } = event.data;
         if (token) {
           localStorage.setItem("token", token);
           window.location.href = "/dashboard";
         }
+        if(brainToken){
+          localStorage.setItem("brainToken",brainToken);
+        }else{
+          console.error("braintoken not provided...")
+        }
+
     
         window.removeEventListener("message", listener);
         popup?.close();

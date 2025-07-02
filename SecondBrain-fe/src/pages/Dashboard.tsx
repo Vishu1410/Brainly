@@ -11,6 +11,8 @@ import NewCard from "@/Component/NewCard";
 import SideBar from "@/Component/SideBar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useNavigate } from "react-router-dom";
+
+
 // import useAutologout from "@/hooks/useAutologout";
 
 
@@ -28,7 +30,10 @@ export default function Dashboard() {
   const [shareData, setShareData] = useState<{ title: string; link: string } | null>(null);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   
- 
+// check karna h ki context or zustand kyu nahi chal rahe...
+
+const brainToken = localStorage.getItem("brainToken")
+
 
   // const logout = ()=>{
   //   localStorage.removeItem("token");
@@ -37,12 +42,14 @@ export default function Dashboard() {
 
   // useAutologout(logout,15)
 
+  
+
   const onShareClick = (data: { title: string; link: string }) => {
     setShareData(data);
     setShareOpen(true);
   };
   
-    
+  
 
     
 
@@ -73,8 +80,24 @@ export default function Dashboard() {
         
         <div className="flex justify-end gap-3 ">
           
-          <Button onClick = {()=> {setModelOpen(true)}} title="Add Content" startIcon={<PlusIcon size="md"/>} varient="primary" />
-          <Button title="Share Brain" startIcon={<ShareIcon size="md"/>} varient="secondry" />
+          <Button onClick = {()=> {setModelOpen(true)}}
+            title="Add Content" 
+            startIcon={<PlusIcon size="md"/>} 
+            varient="primary" 
+          />
+
+          <Button 
+            onClick={()=>{
+              onShareClick({
+                title : "vishu's Brain",
+                link : `http://localhost:5173/sharebrain/${brainToken}`
+              })
+            }} 
+            title="Share Brain" 
+            startIcon={<ShareIcon size="md"/>} 
+            varient="secondry" 
+          />
+
         </div>
       </div>
 

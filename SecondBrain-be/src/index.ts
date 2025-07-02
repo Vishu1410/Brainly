@@ -13,7 +13,8 @@ import connectToMongo from "./db/connectToMongo";
 import passport from "passport"
 import session from "express-session"
 import { Strategy as GoogleStrategy, Profile,VerifyCallback} from "passport-google-oauth20";
-import crypto from "crypto"
+import crypto, { hash } from "crypto"
+
 
 
 dotenv.config()
@@ -49,12 +50,13 @@ passport.use(new GoogleStrategy({
         if(!googleEmail){
             return done(new Error("google email not found"),false);
         }
-
+        const brainToken = crypto.randomBytes(10).toString("hex")
         let user = await UserModel.findOne({email:googleEmail});
         if(!user){
             await UserModel.create({
                 email : googleEmail,
                 googleId : profile.id,
+                brainToken
                 
             })
         }
@@ -73,7 +75,7 @@ passport.use(new GoogleStrategy({
             // ✅ Use postMessage or redirect to send token
             const html = `
             <script>
-                window.opener.postMessage({ token: "${token}" }, "http://localhost:5173/dashboard");
+                window.opener.postMessage({ token: "${token}",brainToken:"${brainToken}" }, "http://localhost:5173/dashboard");
                 window.close();
             </script>
             `;
@@ -116,10 +118,12 @@ app.post("/api/v1/signup",async (req,res)=>{
     try{    
         const username = req.body.username;
         const password = req.body.password;
+        const brainToken = crypto.randomBytes(10).toString("hex")
         const hashpassword = await bcrypt.hash(password,10);
         await UserModel.create({
             username : username,
-            password : hashpassword
+            password : hashpassword,
+            brainToken
         })
         res.json({
             message : "signup Sucessfull..."
@@ -143,6 +147,7 @@ app.post("/api/v1/login",async (req,res)=>{
             username : username
         })
 
+        
         //@ts-ignore
         const matchPassword = await bcrypt.compare(password,verifyUser.password);
        
@@ -151,10 +156,15 @@ app.post("/api/v1/login",async (req,res)=>{
                 id : verifyUser._id
             },Secret)
 
-
+            const Username = verifyUser.username;
+            const brainToken = verifyUser.brainToken
 
             res.send({
-                Authorization : token
+                Username : Username,
+                Authorization : token,
+                brainToken : brainToken
+
+
             })
         }else{
             message : "incorrect cred..."
@@ -333,6 +343,19 @@ app.get("/api/v1/shared/:token",middleware, async (req,res) =>{
         
     }
 
+})
+
+app.get("/api/v1/sharebrain/:token",async(req,res)=>{
+    try{
+        const {token} = req.params;
+        const user = await UserModel.findOne({brainToken : token});
+        if(!user) res.status(404).json({error : "invalid link"});
+        
+        const content = await ContentModel.find({userId : user?._id})
+        res.json(content)
+    }catch(error){
+        console.error("error in share complete brain : ",error)
+    }
 })
 
 

@@ -1,13 +1,14 @@
-import toast from "react-hot-toast";
+import toast, { ToastPosition } from "react-hot-toast";
 
 interface ConfirmToastProps { 
     message : string;
     onConfirm : () => void;
     onCancle? : () => void;
+    position?: ToastPosition;
 
 }
 
-export function confirmToast({message,onConfirm,onCancle} : ConfirmToastProps){
+export function confirmToast({message,onConfirm,onCancle,position = "top-center"} : ConfirmToastProps){
     toast((t)=> (
         <span className="flex flex-col">
           <p className="font-medium">{message}</p>
@@ -16,8 +17,10 @@ export function confirmToast({message,onConfirm,onCancle} : ConfirmToastProps){
              onClick={()=>{
                 onConfirm();
                 toast.dismiss(t.id);
-                toast.success("content deleted")
-
+                toast.success("content deleted",{
+                  duration : 3000
+                })
+                
               }
              }> YES</button>
 
@@ -31,5 +34,5 @@ export function confirmToast({message,onConfirm,onCancle} : ConfirmToastProps){
 
           </div>
         </span>
-      ),{duration : Infinity,id : "confirm-toast"})
+      ),{id : "confirm-toast",position})
 }

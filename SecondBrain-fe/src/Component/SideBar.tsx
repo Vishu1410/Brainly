@@ -17,6 +17,7 @@ import {
     SidebarMenuItem,
     SidebarRail,
   } from "@/components/ui/sidebar"
+import { confirmToast } from "@/utils/confirmToast";
 
   interface SideBarProps extends React.ComponentProps<typeof Sidebar> {
     onSelectType: (type: string) => void;
@@ -104,7 +105,11 @@ const SideBar = ({ onSelectType, ...props }: SideBarProps) => {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <button onClick={handleLogout} className="flex items-center gap-2 w-full text-red-600 hover:text-red-700 hover:bg-red-50">
+                  <button onClick={()=> confirmToast({
+                    message : "Are you sure you want to logout ? ",
+                    onConfirm : handleLogout,
+                    position : "bottom-left"
+                  })} className="flex items-center gap-2 w-full text-red-600 hover:text-red-700 hover:bg-red-50">
                     <LogOut className="size-4" />
                     <span>Logout</span>
                   </button>

@@ -49,7 +49,6 @@ const user = new Schema({
     // google login
     email: {
         type: String,
-        required: true,
         lowercase: true,
         unique: true,
     },
@@ -64,6 +63,10 @@ const user = new Schema({
         type: Date,
         default: Date.now,
     },
+    brainToken: {
+        type: String,
+        unique: true
+    }
 });
 const content = new Schema({
     title: { type: String, required: true },
