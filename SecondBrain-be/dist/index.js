@@ -25,6 +25,7 @@ const connectToMongo_1 = __importDefault(require("./db/connectToMongo"));
 const passport_1 = __importDefault(require("passport"));
 const passport_google_oauth20_1 = require("passport-google-oauth20");
 const crypto_1 = __importDefault(require("crypto"));
+const streamifier_1 = __importDefault(require("streamifier"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
@@ -52,7 +53,8 @@ passport_1.default.use(new passport_google_oauth20_1.Strategy({
         const brainToken = crypto_1.default.randomBytes(10).toString("hex");
         let user = yield DB_1.UserModel.findOne({ email: googleEmail });
         if (!user) {
-            yield DB_1.UserModel.create({
+            user = yield DB_1.UserModel.create({
+                username: googleEmail,
                 email: googleEmail,
                 googleId: profile.id,
                 brainToken
@@ -136,41 +138,52 @@ app.post("/api/v1/login", (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 }));
 app.post("/api/v1/content", middleware_1.middleware, multermiddleware_1.uploads, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        //@ts-ignore
-        console.log(req.userId);
         const file = req.file;
-        const { title, description, type, link } = req.body;
+        const { title, description, type, link, textContent } = req.body;
         const shareToken = crypto_1.default.randomBytes(8).toString("hex");
         let fileurl = null;
-        let resourceType;
+        let filename;
+        let filePublicId = null;
         if (file) {
-            if (file.mimetype === "application/pdf" || file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-                resourceType = "raw";
-            }
-            else {
-                resourceType = "auto";
-            }
-            const result = yield cloudinary_1.v2.uploader.upload(file.path, {
-                folder: "upload-doc",
-                resource_type: resourceType,
-            });
-            fileurl = result.secure_url;
+            //stream the in-memory buffer to cloudinary..
+            filename = file.originalname;
+            const resourceType = /pdf$|docx$/i.test(filename) ? "raw" : "auto";
+            const Response = (yield new Promise((resolve, reject) => {
+                const upload = cloudinary_1.v2.uploader.upload_stream({
+                    folder: "upload-doc",
+                    resource_type: resourceType,
+                    public_id: filename,
+                    filename_override: filename,
+                    unique_filename: false
+                }, (err, result) => (err ? reject(err) : resolve(result)));
+                streamifier_1.default.createReadStream(file.buffer).pipe(upload);
+            }));
+            fileurl = Response.secure_url;
+            filePublicId = Response.public_id;
         }
         else if (link) {
             fileurl = link;
+            filename = (_a = link.split("?")[0].split("/").pop()) !== null && _a !== void 0 ? _a : "download";
         }
-        yield DB_1.ContentModel.create({
+        const newContent = yield DB_1.ContentModel.create({
             title,
-            description,
             type,
+            description,
+            textContent,
             fileurl: fileurl,
+            fileName: filename,
+            filePublicId: filePublicId,
             //@ts-ignore
             userId: req.userId,
             shareToken
         });
+        const populatedContent = yield DB_1.ContentModel.findById(newContent._id).populate("userId", "username");
+        console.log("this is populatedContent : ", populatedContent);
         res.status(201).send({
-            "message": "content added..."
+            "message": "content added...",
+            data: populatedContent
         });
     }
     catch (e) {
@@ -198,11 +211,38 @@ app.get("/api/v1/content", middleware_1.middleware, (req, res) => __awaiter(void
     }
 }));
 app.delete("/api/v1/delete/:id", middleware_1.middleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const contentId = req.params.id;
-    yield DB_1.ContentModel.findByIdAndDelete(contentId);
-    res.status(200).json({
-        "message": "content deleted..."
-    });
+    try {
+        const contentId = req.params.id;
+        const content = yield DB_1.ContentModel.findById(contentId);
+        if (!content) {
+            res.status(404).json({ error: "content not found..." });
+            return;
+        }
+        const filePublicId = content.filePublicId;
+        const type = content.type;
+        const needsDestroy = !!filePublicId && (type === "file" || type === "image" || type === "video");
+        if (needsDestroy) {
+            try {
+                yield cloudinary_1.v2.uploader.destroy(filePublicId, {
+                    resource_type: type === "file" ? "raw" : "auto"
+                });
+            }
+            catch (err) {
+                console.error("Cloudinary destroy failed:", err);
+                res.status(502).json({ error: "Cloud cleanup failed." });
+                return;
+            }
+        }
+        yield content.deleteOne();
+        res.status(200).json({
+            "message": "content deleted..."
+        });
+    }
+    catch (error) {
+        console.error("Delete error : ", error);
+        res.status(500).json({ error: "Server Error..." });
+        return;
+    }
 }));
 // app.post("/api/v1/brain/share",middleware,async(req,res)=>{
 //     const share = req.body.share;
@@ -274,10 +314,16 @@ app.get("/api/v1/shared/:token", middleware_1.middleware, (req, res) => __awaite
 app.get("/api/v1/sharebrain/:token", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { token } = req.params;
-        const user = yield DB_1.UserModel.findOne({ brainToken: token });
-        if (!user)
+        console.log("this is my token : ", token);
+        const user = yield DB_1.UserModel.findOne({ brainToken: token }).lean();
+        console.log("this is my found user : ", user);
+        if (!user) {
             res.status(404).json({ error: "invalid link" });
-        const content = yield DB_1.ContentModel.find({ userId: user === null || user === void 0 ? void 0 : user._id });
+            return;
+        }
+        ;
+        const content = yield DB_1.ContentModel.find({ userId: user === null || user === void 0 ? void 0 : user._id }).lean();
+        console.log("this is my content : ", content);
         res.json(content);
     }
     catch (error) {

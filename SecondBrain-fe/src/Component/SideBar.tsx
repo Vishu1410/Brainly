@@ -2,7 +2,7 @@
 // import { YoutubeIcon } from "../Icons/YoutubeIcon";
 // import { SideBarItems } from "./SideBarItems";
 // import { Logo } from "../Icons/logo";
-import { Brain, Youtube, Twitter, ImageIcon, Video, File, LogOut } from "lucide-react"
+import { Brain, Youtube, Twitter, ImageIcon, Video, File, LogOut, Text, Database } from "lucide-react"
 
 import {
     Sidebar,
@@ -19,12 +19,21 @@ import {
   } from "@/components/ui/sidebar"
 import { confirmToast } from "@/utils/confirmToast";
 
+
   interface SideBarProps extends React.ComponentProps<typeof Sidebar> {
     onSelectType: (type: string) => void;
   }
   
 
   const navigationItems = [
+    {
+      title : "all",
+      icon : Database
+    },
+    {
+      title : "text",
+      icon : Text
+    },
     {
       title: "youtube",
       url: "#",
@@ -58,6 +67,7 @@ const SideBar = ({ onSelectType, ...props }: SideBarProps) => {
 
     const handleLogout = ()=>{
       localStorage.removeItem("token");
+      localStorage.removeItem("brainToken");
       window.location.href = "/login"
     }
 
@@ -67,7 +77,9 @@ const SideBar = ({ onSelectType, ...props }: SideBarProps) => {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton size="lg" asChild>
-                  <button className="flex items-center gap-2">
+                  <button onClick={()=>{
+                    window.location.reload()
+                  }} className="flex items-center gap-2 cursor-pointer ">
                     <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-blue-600 text-white">
                       <Brain className="size-4" />
                     </div>

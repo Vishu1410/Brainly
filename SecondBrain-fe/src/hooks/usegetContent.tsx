@@ -3,11 +3,11 @@ import  { useEffect, useState } from 'react'
 import { BACKEND_URL } from '../config';
 
 const usegetContent = () => {
-  const [contentArray,setContentArray] = useState([]);
+  const [contentArray,setContentArray] = useState<any[]>([]);
 
   async function fetchdata(){
         try {
-            console.log(localStorage.getItem("token"))
+           
             const res = await axios.get(BACKEND_URL+"/api/v1/content",{
                 headers : {
                     Authorization : localStorage.getItem("token")
@@ -21,7 +21,6 @@ const usegetContent = () => {
 
     async function deleteContent(contentId : string){
         try {
-            console.log(contentId);
             await axios.delete(BACKEND_URL+`/api/v1/delete/${contentId}`,{
                 headers : {
                     Authorization : localStorage.getItem("token")
@@ -36,13 +35,17 @@ const usegetContent = () => {
         }
     }
 
+    const addContentToState = (newContent : any)=>{
+        setContentArray((prev) => [newContent, ...prev])
+    }
+
   useEffect(
     ()=>{   
         fetchdata()
   },[])
 
 
-  return {contentArray,deleteContent}
+  return {contentArray,deleteContent,addContentToState}
 }
 
 export default usegetContent

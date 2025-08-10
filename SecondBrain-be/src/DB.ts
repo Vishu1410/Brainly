@@ -13,7 +13,9 @@ const user = new Schema({
 
     password: {
     type: String,
-    required : true // don’t return password by default
+    required (this : any){
+        return !this.googleId
+    } // don’t return password by default
     },
 
     // google login
@@ -51,7 +53,10 @@ const content = new Schema({
     title: { type: String, required: true },
     description : {type : String},
     type : {type : String,enum : ['text','youtube','twitter','image','video','file']},
+    fileName : String,
     fileurl : String,
+    filePublicId : String,
+    textContent : String,
     tags: [{ type: mongoose.Types.ObjectId, ref: 'Tags' }],
     createdAt : {type : Date ,default : Date.now()},
     userId: { type: mongoose.Types.ObjectId, ref: 'UserModel', required: true },

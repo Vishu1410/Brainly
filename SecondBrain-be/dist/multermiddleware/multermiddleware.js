@@ -16,8 +16,10 @@ const storage = multer_1.default.diskStorage({
         cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
     }
 });
-// support multiple files under one field
-exports.uploads = (0, multer_1.default)({ storage }).single('file'); // max 10 files
+exports.uploads = (0, multer_1.default)({
+    storage: multer_1.default.memoryStorage(),
+    limits: { fileSize: 20 * 1024 * 1024 }
+}).single('file');
 // const fileFilter = (req: any, file: Express.Multer.File, cb: any) => {
 //     const allowedTypes = ['image/jpeg', 'image/png', 'application/pdf', 'video/mp4', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
 //     if (allowedTypes.includes(file.mimetype)) {

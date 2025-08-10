@@ -1,4 +1,4 @@
-import express,{ Request, Response } from "express"
+import express,{ Request, Response, text } from "express"
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"
@@ -14,6 +14,7 @@ import passport from "passport"
 import session from "express-session"
 import { Strategy as GoogleStrategy, Profile,VerifyCallback} from "passport-google-oauth20";
 import crypto, { hash } from "crypto"
+import streamifier from "streamifier"
 
 
 
@@ -53,7 +54,8 @@ passport.use(new GoogleStrategy({
         const brainToken = crypto.randomBytes(10).toString("hex")
         let user = await UserModel.findOne({email:googleEmail});
         if(!user){
-            await UserModel.create({
+            user = await UserModel.create({
+                username : googleEmail,
                 email : googleEmail,
                 googleId : profile.id,
                 brainToken
@@ -179,50 +181,69 @@ app.post("/api/v1/login",async (req,res)=>{
 
 app.post("/api/v1/content",middleware,uploads,async(req,res)=>{
     try{
-        //@ts-ignore
-        console.log(req.userId)
         
-        const file = req.file as Express.Multer.File;
-        const {title,description,type,link} = req.body;
+        const file = req.file
+        const {title,description,type,link,textContent} = req.body;
        
         const shareToken = crypto.randomBytes(8).toString("hex");
 
         let fileurl = null;
-        let resourceType: "auto" | "raw";
+        let filename : string | undefined
+        let filePublicId = null
+       
 
         if(file){
 
-            if (file.mimetype === "application/pdf" || file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-                resourceType = "raw";
-              } else{
-                resourceType = "auto"
-              }
+            
+              //stream the in-memory buffer to cloudinary..
+
+              filename = file.originalname;
+              const resourceType: "raw" | "auto" =
+              /pdf$|docx$/i.test(filename) ? "raw" : "auto";
               
-              const result = await cloudinary.uploader.upload(file.path, {
-                folder : "upload-doc",
-                resource_type: resourceType,
-              });
-              fileurl = result.secure_url
+
+              const Response = (await new Promise((resolve,reject)=>{
+                const upload = cloudinary.uploader.upload_stream({
+                    folder : "upload-doc",
+                    resource_type : resourceType,
+                    public_id : filename,
+                    filename_override : filename,
+                    unique_filename : false
+
+                },(err,result) => (err ? reject(err) : resolve(result)))
+
+                streamifier.createReadStream(file.buffer).pipe(upload)
+              })) as any;
+
+           fileurl = Response.secure_url
+           filePublicId = Response.public_id
               
             
         } else if(link){
             fileurl = link
+            filename = link.split("?")[0].split("/").pop() ?? "download";
         }
 
         
 
-        await ContentModel.create({
+        const newContent = await ContentModel.create({
             title,
-            description,
             type,
+            description,
+            textContent,
             fileurl : fileurl,
+            fileName : filename,
+            filePublicId : filePublicId,
             //@ts-ignore
             userId : req.userId,
             shareToken
         })
 
+        const populatedContent = await ContentModel.findById(newContent._id).populate("userId","username")
+        console.log("this is populatedContent : ",populatedContent)
         res.status(201).send({
-            "message" : "content added..."
+            "message" : "content added...",
+            data : populatedContent
         })
 
     } catch(e){
@@ -254,12 +275,49 @@ app.get("/api/v1/content",middleware,async (req,res)=>{
 })
 
 
-app.delete("/api/v1/delete/:id",middleware,async(req,res)=>{
-    const contentId = req.params.id;
-    await ContentModel.findByIdAndDelete(contentId)
-    res.status(200).json({
-        "message" : "content deleted..."
-    })
+app.delete("/api/v1/delete/:id",middleware,async(req : Request,res : Response) : Promise<void>=>{
+    try {
+
+        const contentId = req.params.id;
+        const content = await ContentModel.findById(contentId);
+
+        if(!content){
+            res.status(404).json({error : "content not found..."})
+            return
+        }
+
+        const filePublicId = content.filePublicId as string | undefined
+
+      
+        const type = content.type
+
+        const needsDestroy = !!filePublicId && (type === "file" || type === "image" || type === "video");
+
+        if(needsDestroy){
+            try {
+                await cloudinary.uploader.destroy(filePublicId, {
+                  resource_type: type === "file" ? "raw" : "auto"
+                });
+              } catch (err) {
+                console.error("Cloudinary destroy failed:", err);
+                res.status(502).json({ error: "Cloud cleanup failed." });
+                return;
+              }
+
+        }
+        await content.deleteOne()
+
+        
+        res.status(200).json({
+            "message" : "content deleted..."
+        })
+        
+    } catch (error) {
+        console.error("Delete error : ",error)
+        res.status(500).json({error : "Server Error..."})
+        return
+        
+    }
 })
 
 // app.post("/api/v1/brain/share",middleware,async(req,res)=>{
@@ -328,6 +386,8 @@ app.delete("/api/v1/delete/:id",middleware,async(req,res)=>{
 
 
 //@ts-ignore
+
+
 app.get("/api/v1/shared/:token",middleware, async (req,res) =>{
     try {
         const { token } = req.params;
@@ -348,10 +408,17 @@ app.get("/api/v1/shared/:token",middleware, async (req,res) =>{
 app.get("/api/v1/sharebrain/:token",async(req,res)=>{
     try{
         const {token} = req.params;
-        const user = await UserModel.findOne({brainToken : token});
-        if(!user) res.status(404).json({error : "invalid link"});
+        console.log("this is my token : ",token)
+        const user = await UserModel.findOne({brainToken : token}).lean();
+
+        console.log("this is my found user : ",user)
+        if(!user){
+            res.status(404).json({error : "invalid link"})
+            return
+        };
         
-        const content = await ContentModel.find({userId : user?._id})
+        const content = await ContentModel.find({userId : user?._id}).lean();
+        console.log("this is my content : ",content)
         res.json(content)
     }catch(error){
         console.error("error in share complete brain : ",error)

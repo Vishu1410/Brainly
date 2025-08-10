@@ -3,17 +3,17 @@ import { X } from "lucide-react";
 import axios from "axios";
 import { BACKEND_URL } from "../config";
 
-const InputCard = ({ onClose }: { onClose: () => void }) => {
+const InputCard = ({ onClose, onContentAdd }: { onClose: () => void, onContentAdd : (data : any) => void }) => {
   const cardRef = useRef(null);
   const [type, setType] = useState("text");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     link: "",
+    textContent : "",
     file: null as File | null,
   });
 
-  // Close on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (cardRef.current && !(cardRef.current as any).contains(event.target)) {
@@ -38,50 +38,69 @@ const InputCard = ({ onClose }: { onClose: () => void }) => {
   const handleSubmit = async () => {
     const data = new FormData();
     data.append("title", formData.title);
-    data.append("description", formData.description);
     data.append("type", type);
-    if (type === "youtube" || type === "twitter") {
-      data.append("link", formData.link);
+  
+    if (type === "youtube" || type === "twitter" || type === "text") {
+      if (formData.link) data.append("link", formData.link);
     }
-    if (formData.file) {
-      data.append("file", formData.file);
+  
+    if (type === "file" || type === "video" || type === "image") {
+      data.append("description", formData.description);
+      if (formData.file) {
+        data.append("file", formData.file);
+      }
+    }
+  
+    if (type === "text" && formData.textContent) {
+      data.append("textContent", formData.textContent);
     }
 
     try {
-      console.log(localStorage.getItem("token"));
-      const res = await axios.post(BACKEND_URL+"/api/v1/content",data,{
-        headers:{
-          Authorization : localStorage.getItem("token")
+      
+      const res = await axios.post(`${BACKEND_URL}/api/v1/content`, data, {
+        headers: {
+          Authorization: localStorage.getItem("token") || "",
+        },
+      });
+
+    
+      const newContent = res.data.data;
+    
+      onContentAdd({
+        ...newContent,
+        userId : {
+          _id : newContent.userId,
+          username : newContent.username
         }
       })
-
-      // const result = await res.json();
-      console.log("Submitted:", res);
-      onClose(); // close after submission
+      onClose();
     } catch (err) {
       console.error("Error submitting data:", err);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
       <div
         ref={cardRef}
-        className="relative bg-white p-6 rounded-2xl shadow-xl w-full max-w-md space-y-4"
+        className="relative bg-white p-6 md:p-8 rounded-3xl shadow-2xl w-full max-w-lg animate-fade-in space-y-5"
       >
-        <button onClick={onClose} className="absolute top-3 right-3 text-gray-500 hover:text-black">
-          <X />
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-red-600 transition"
+        >
+          <X size={22} />
         </button>
 
-        <h2 className="text-xl font-semibold ">Add Content</h2>
+        <h2 className="text-2xl font-semibold text-gray-800 text-center mb-4"> Add New Content</h2>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium">Type</label>
+          <label className="block text-sm font-medium text-blue-700">Type</label>
           <select
             name="type"
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="w-full border p-2 rounded-lg"
+            className="w-full border border-gray-300 p-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="youtube">YouTube</option>
             <option value="twitter">Twitter</option>
@@ -93,59 +112,77 @@ const InputCard = ({ onClose }: { onClose: () => void }) => {
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium">Title</label>
+          <label className="block text-sm font-medium text-blue-700">Title</label>
           <input
             type="text"
             name="title"
             value={formData.title}
             onChange={handleChange}
-            className="w-full border p-2 rounded-lg"
+            className="w-full border border-gray-300 p-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">Description</label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            className="w-full border p-2 rounded-lg"
-          />
-        </div>
+        {type === "text" && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-blue-700">Text Content</label>
+              <textarea
+                name="textContent"
+                value={formData.textContent}
+                onChange={handleChange}
+                rows={4}
+                className="w-full border border-gray-300 p-2 rounded-xl shadow-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+        )}
+
+
+        
 
         {(type === "youtube" || type === "twitter") && (
           <div className="space-y-2">
-            <label className="block text-sm font-medium">Link</label>
+            <label className="block text-sm font-medium text-blue-700">Link</label>
             <input
               type="text"
               name="link"
               value={formData.link}
               onChange={handleChange}
-              className="w-full border p-2 rounded-lg"
+              className="w-full border border-gray-300 p-2 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         )}
 
         {(type === "file" || type === "video" || type === "image") && (
           <div className="space-y-2">
-            <label className="block text-sm font-medium capitalize">{type} Upload</label>
+            <label className="block text-sm font-medium text-blue-700 capitalize">{type} Upload</label>
             <input
               type="file"
               accept={type === "image" ? "image/*" : type === "video" ? "video/*" : "*"}
               onChange={handleFileChange}
-              className="w-full"
+              className="w-full text-sm"
             />
             {formData.file && (
-              <p className="text-sm text-gray-600">Selected: {formData.file.name}</p>
+              <p className="text-sm text-gray-500">📎 {formData.file.name}</p>
             )}
           </div>
         )}
 
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-blue-700">Description</label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            rows={3}
+            className="w-full border border-gray-300 p-2 rounded-xl shadow-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+
         <button
           onClick={handleSubmit}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition"
+          className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white font-semibold py-2 rounded-xl shadow-md transition"
         >
-          Submit
+          Submit 🚀
         </button>
       </div>
     </div>

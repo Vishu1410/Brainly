@@ -30,6 +30,8 @@ const ViewSharedBrain = () => {
         title={item.title} 
         description={item.description} 
         contentType={item.type}
+        fileName={item.fileName}
+        textContent={item.textContent}
         url={item.fileurl}
         createdAt={new Date(item.createdAt)}
        />

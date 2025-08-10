@@ -13,34 +13,35 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useNavigate } from "react-router-dom";
 
 
-// import useAutologout from "@/hooks/useAutologout";
+import useAutologout from "@/hooks/useAutologout";
 
 
-export default function Dashboard() {
+export default  function Dashboard() {
 
   const navigate = useNavigate();
 
 
-  const {contentArray,deleteContent} = usegetContent()
-  console.log(contentArray)
+  const {contentArray,deleteContent,addContentToState} =  usegetContent()
+  
   
   const [ModelOpen,setModelOpen] = useState(false);
 
   const [shareOpen, setShareOpen] = useState(false);
   const [shareData, setShareData] = useState<{ title: string; link: string } | null>(null);
-  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<string | null>("all");
   
 // check karna h ki context or zustand kyu nahi chal rahe...
 
 const brainToken = localStorage.getItem("brainToken")
 
 
-  // const logout = ()=>{
-  //   localStorage.removeItem("token");
-  //   navigate("/login")
-  // }
+  const logout = ()=>{
+    localStorage.removeItem("token");
+    localStorage.removeItem("brainToken")
+    navigate("/login")
+  }
 
-  // useAutologout(logout,15)
+  useAutologout(logout,15)
 
   
 
@@ -63,7 +64,7 @@ const brainToken = localStorage.getItem("brainToken")
     <div className= "p-2 ml-65 min-h-screen bg-gray-100 border-2" >
 
       
-      {ModelOpen && <InputCard onClose={() => setModelOpen(false)} />}
+      {ModelOpen && <InputCard onClose={() => setModelOpen(false)} onContentAdd = {(newContent) => addContentToState(newContent)} />}
       
       {shareOpen && shareData && (
           <ShareMenu
@@ -103,14 +104,15 @@ const brainToken = localStorage.getItem("brainToken")
 
       <div className=" gap-2 grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3  border-red-500">
 
-        { contentArray.filter((item: any) => !selectedType || item.type === selectedType).map((item : any)=>(
-        
+        { contentArray.filter((item: any) => selectedType === "all" || item.type === selectedType).sort((a,b)=> new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((item : any)=>(
           <NewCard 
           title={item.title} 
           description={item.description} 
           contentType={item.type}
           url={item.fileurl}
-          createdAt={new Date(item.createdAt)}
+          fileName={item.fileName}
+          textContent={item.textContent}
+          createdAt={item.createdAt ? new Date(item.createdAt) : new Date()}
           onDelete={()=>deleteContent(item._id)} 
           onShare={()=>{setShareData({title : item.title,link :`${window.location.origin}/shared/${item.shareToken}`}); setShareOpen(true)}}/>
         ))}

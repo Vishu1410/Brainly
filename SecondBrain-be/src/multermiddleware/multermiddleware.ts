@@ -12,8 +12,11 @@ const storage = multer.diskStorage({
     }
 })
 
-// support multiple files under one field
-export const uploads = multer({ storage }).single('file'); // max 10 files
+
+export const uploads = multer({ 
+    storage : multer.memoryStorage(),
+     limits : {fileSize : 20*1024*1024} 
+    }).single('file'); 
 
 
 // const fileFilter = (req: any, file: Express.Multer.File, cb: any) => {

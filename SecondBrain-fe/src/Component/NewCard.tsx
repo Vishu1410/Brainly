@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button"
 import { YoutubeIcon } from "@/Icons/YoutubeIcon"
 import { XIcon } from "@/Icons/XIcon"
 import { confirmToast } from "@/utils/confirmToast"
+import Linkify from "linkify-react"
+import { useEffect, useRef, useState } from "react"
+import ImageModal from "@/components/ui/ImageModel"
 
 // import { Logo } from "@/Icons/logo"
 // import { Badge } from "@/components/ui/badge"
@@ -16,8 +19,11 @@ export interface ContentCardProps {
   description: string
 //   hashtags: string[]
   createdAt?: Date
-  contentType: "image" | "youtube" | "twitter" | "file"
+  contentType: "image" | "youtube" | "twitter" | "file" | "text"
   url:string
+  fileName : string
+  textContent : string
+  link ?: string
 
   onDelete?: () => void
   onShare?: () => void
@@ -32,11 +38,26 @@ export default function NewCard({
   createdAt,
   contentType,
 //   contentData,
+    fileName,
     url,
+    textContent,
+    link,
   onDelete,
   onShare,
 //   className = "",
 }: ContentCardProps) {
+
+  const [expanded,setExpanded] = useState(false)
+  const [isOverflowing, setIsOverflowing] = useState(false)
+  const [isOpen,setIsOpen] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  useEffect(()=>{
+    if(contentRef.current){
+      const el = contentRef.current;
+      setIsOverflowing(el.scrollHeight > el.clientHeight)
+    }
+  },[textContent])
 
   const formatDate = (createdAt: Date) => {
     return new Intl.DateTimeFormat("en-US", {
@@ -107,19 +128,98 @@ const getLogoByType = (type: string): React.ReactNode => {
       return "";
     }
   };
+
+// FUNCTION TO HANDLE TEXTCONTENT MORE ATTRACTIVELY : 
+function formatTextContent(text: string) {
+  const lines = text.split("\n");
+
+  return lines.map((line, idx) => {
+    const trimmed = line.trim();
+
+    // Bold headings (e.g., ☕ LEARNING:)
+    if (/^[^\w\s]*\s?[A-Z ]+[:：]$/.test(trimmed)) {
+      return (
+        <div key={idx} className="font-bold text-gray-800 mt-2">
+          {trimmed}
+        </div>
+      );
+    }
+
+    // Bullet points (•)
+    if (trimmed.startsWith("•")) {
+      return (
+        <div key={idx} className="pl-4 before:content-['•'] before:mr-2 text-sm text-gray-700">
+          <Linkify
+            options={{
+              target: "_blank",
+              rel: "noopener noreferrer",
+              className: "text-blue-600 underline",
+            }}
+          >
+            {trimmed.substring(1).trim()}
+          </Linkify>
+        </div>
+      );
+    }
+
+    // Link-only lines
+    if (trimmed.startsWith("http")) {
+      return (
+        <div key={idx} className="pl-6 text-sm">
+          <a
+            href={trimmed}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline"
+          >
+            {trimmed}
+          </a>
+        </div>
+      );
+    }
+
+    // Default plain line
+    return (
+      <div key={idx} className="text-sm text-gray-700">
+        <Linkify
+          options={{
+            target: "_blank",
+            rel: "noopener noreferrer",
+            className: "text-blue-600 underline",
+          }}
+        >
+          {trimmed}
+        </Linkify>
+      </div>
+    );
+  });
+}
+
+
  
 
   const renderContent = () => {
     switch (contentType) {
+
       case "image":
         return (
-          <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden ">
+          <>
+          <div className="relative w-full h-64 bg-gray-100 rounded-lg overflow-hidden "
+          onClick={()=>setIsOpen(true)}>
             <img
               src={url || "/placeholder.svg?height=256&width=400"}
             //   alt={contentData.alt || "Content image"}
               className="w-full h-full object-cover"
             />
           </div>
+
+          {isOpen && <ImageModal src={url} onClose={()=>setIsOpen(false)}/>}
+
+          </>
+
+          
+            
+          
         )
 
       case "youtube":
@@ -129,6 +229,30 @@ const getLogoByType = (type: string): React.ReactNode => {
             <iframe className="w-full h-full " src={getYoutubeEmbedLink(url)} title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
           </div>
         )
+
+      case "text":
+        return (
+          <div className="p-4 bg-gray-50 rounded-lg">
+            
+            <Linkify
+             options={{
+                      target: '_blank',
+                      rel: 'noopener noreferrer',
+                      className: 'text-blue-600 underline',
+                      }}><p className="text-sm text-gray-800 whitespace-pre-line">{textContent ? formatTextContent(textContent) : "NO CONTENT"}</p></Linkify>
+
+            {link && (
+              <a
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline mt-2 block text-sm"
+              >
+                {link}
+              </a>
+            )}
+          </div>
+        );
 
       case "twitter":
         const fixedUrl = url ? url.replace("https://x.com", "https://twitter.com") : "";
@@ -169,7 +293,7 @@ const getLogoByType = (type: string): React.ReactNode => {
                       {label}
                     </span>
                   </div>
-                  <p className="text-sm font-medium text-gray-700">{ "Document"}</p>
+                  <p className="text-sm font-medium text-gray-700">{fileName}</p>
                 </div>
               </div>
             </div>
@@ -214,7 +338,7 @@ const getLogoByType = (type: string): React.ReactNode => {
             onClick={()=>confirmToast({
               message : "Are you sure you want to delete this content ?",
               onConfirm: onDelete ?? (() => {}),
-              duration : 3000
+              
             })}
             className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
           >
@@ -224,7 +348,30 @@ const getLogoByType = (type: string): React.ReactNode => {
       </div>
 
       {/* Content */}
-      <div className="p-4 w-full">{renderContent()}</div>
+      <div ref={contentRef} className={`p-4 w-full transition-all duration-300 ease-in-out ${!expanded ? "max-h-64 overflow-hidden" : ""}`}>{renderContent()}</div>
+
+
+      {isOverflowing && !expanded && (
+        <div className="px-4 pb-2">
+          <button
+            className="text-sm text-blue-600 hover:underline"
+            onClick={() => setExpanded(true)}
+          >
+            Read more
+          </button>
+        </div>
+      )}
+
+      {isOverflowing && expanded && (
+        <div className="px-4 pb-2">
+          <button
+            className="text-sm text-blue-600 hover:underline"
+            onClick={() => setExpanded(false)}
+          >
+            Show less
+          </button>
+        </div>
+      )}
 
       {/* Description */}
       <div className="px-4 pb-2">

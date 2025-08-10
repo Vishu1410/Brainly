@@ -12,7 +12,8 @@ import NewCard from '@/Component/NewCard';
     createdAt: Date
     type: "image" | "youtube" | "twitter" | "file"
     fileurl:string
-  
+    textContent : string
+    fileName : string
     onDelete?: () => void
     onShare?: () => void
   //   className?: string
@@ -50,7 +51,9 @@ const Sharedview = () => {
         title={content.title}
         description={content.description}
         contentType={content.type}
+        fileName={content.fileName}
         url={content.fileurl}
+        textContent={content.textContent}
         createdAt={new Date(content.createdAt)}
         onDelete={undefined} // hide delete in shared view
         onShare={undefined}  // optional: hide share again
